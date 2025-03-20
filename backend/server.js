@@ -4,6 +4,8 @@ const sequelize = require('./config/database');
 const userRoutes = require('./routes/UserRoutes');
 const carRoutes = require('./routes/CarRoutes'); // Import des routes des voitures
 const reservationRoutes = require('./routes/ReservationRoutes');
+const path = require('path');  // Ajouter cette ligne
+
 
 require('dotenv').config();
 
@@ -15,6 +17,8 @@ app.use(express.json());
 app.use('/api/users', userRoutes); // API pour utilisateurs
 app.use('/api/cars', carRoutes); // API pour voitures
 app.use('/api/reservations', reservationRoutes); // API pour réservations
+app.use('/images', express.static(path.join(__dirname, 'public', 'images')));
+
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, async () => {

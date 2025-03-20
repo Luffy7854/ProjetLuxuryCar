@@ -120,7 +120,8 @@ function App() {
         {cars.length > 0 ? (
           cars.map((car) => (
             <div key={car.id} className="border p-4 w-64 shadow-md">
-              <img src={`/${car.image}`} alt={car.name} className="w-full" />
+              {/* Utilisation de l'URL de l'image complète */}
+              <img src={car.imageUrl} alt={car.name} className="w-full" />
               <h3 className="font-bold">{car.name}</h3>
               <p>Marque : {car.brand}</p>
               <p>Vitesse Max : {car.max_speed} km/h</p>
