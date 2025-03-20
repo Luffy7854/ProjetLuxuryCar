@@ -13,6 +13,13 @@ function App() {
   const [showLogin, setShowLogin] = useState(false);
   const [showSignup, setShowSignup] = useState(false);
 
+  // States pour le formulaire d'inscription
+  const [registerData, setRegisterData] = useState({
+    username: '',
+    email: '',
+    password: ''
+  });
+
   useEffect(() => {
     fetchCars();
     fetchReservations();
@@ -56,6 +63,34 @@ function App() {
     }
   };
 
+  // Gérer la saisie des champs du formulaire d'inscription
+  const handleRegisterChange = (e) => {
+    setRegisterData({ ...registerData, [e.target.name]: e.target.value });
+  };
+
+  // Gérer la soumission du formulaire d'inscription
+  const handleRegisterSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await fetch('http://localhost:5000/api/users/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(registerData),
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        alert('✅ Compte créé avec succès');
+        setRegisterData({ username: '', email: '', password: '' });
+        setShowSignup(false);
+      } else {
+        alert('❌ Erreur: ' + data.error);
+      }
+    } catch (error) {
+      console.error('❌ Erreur serveur:', error);
+    }
+  };
+
   return (
     <div className="relative">
       <header className="flex justify-between items-center p-4">
@@ -70,50 +105,49 @@ function App() {
         </div>
       </header>
 
-      {/* Modal Connexion */}
-      {showLogin && (
-        <div className="fixed top-0 left-0 w-full h-full bg-gray-800 bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white p-6 rounded-lg w-96">
-            <h2 className="text-xl mb-4">Se connecter</h2>
-            <input type="text" placeholder="Nom d'utilisateur" className="border p-2 mb-2 w-full" />
-            <input type="password" placeholder="Mot de passe" className="border p-2 mb-2 w-full" />
-            <button className="bg-blue-500 text-white p-2 rounded mt-2 w-full" onClick={() => setShowLogin(false)}>
-              Se connecter
-            </button>
-            <button className="bg-red-500 text-white p-2 rounded mt-2 w-full" onClick={() => setShowLogin(false)}>
-              Fermer
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Modal Inscription */}
       {showSignup && (
         <div className="fixed top-0 left-0 w-full h-full bg-gray-800 bg-opacity-50 flex items-center justify-center">
           <div className="bg-white p-6 rounded-lg w-96">
             <h2 className="text-xl mb-4">Créer un compte</h2>
-            <input type="text" placeholder="Nom d'utilisateur" className="border p-2 mb-2 w-full" />
-            <input type="email" placeholder="Email" className="border p-2 mb-2 w-full" />
-            <input type="password" placeholder="Mot de passe" className="border p-2 mb-2 w-full" />
-            <button className="bg-green-500 text-white p-2 rounded mt-2 w-full" onClick={() => setShowSignup(false)}>
-              S'inscrire
-            </button>
+            <form onSubmit={handleRegisterSubmit}>
+              <input
+                type="text"
+                name="username"
+                placeholder="Nom d'utilisateur"
+                value={registerData.username}
+                onChange={handleRegisterChange}
+                className="border p-2 mb-2 w-full"
+                required
+              />
+              <input
+                type="email"
+                name="email"
+                placeholder="Email"
+                value={registerData.email}
+                onChange={handleRegisterChange}
+                className="border p-2 mb-2 w-full"
+                required
+              />
+              <input
+                type="password"
+                name="password"
+                placeholder="Mot de passe"
+                value={registerData.password}
+                onChange={handleRegisterChange}
+                className="border p-2 mb-2 w-full"
+                required
+              />
+              <button type="submit" className="bg-green-500 text-white p-2 rounded mt-2 w-full">
+                S'inscrire
+              </button>
+            </form>
             <button className="bg-red-500 text-white p-2 rounded mt-2 w-full" onClick={() => setShowSignup(false)}>
               Fermer
             </button>
           </div>
         </div>
       )}
-
-      {/* Filtre */}
-      <div className="p-4">
-        <select value={brand} onChange={(e) => setBrand(e.target.value)} className="border p-2">
-          <option value="">Toutes les marques</option>
-          <option value="Ferrari">Ferrari</option>
-          <option value="Lamborghini">Lamborghini</option>
-          <option value="Porsche">Porsche</option>
-        </select>
-      </div>
 
       {/* Liste des voitures */}
       <div className="flex flex-wrap gap-4 p-4">
@@ -141,23 +175,6 @@ function App() {
           <p className="p-4">Aucune voiture trouvée.</p>
         )}
       </div>
-
-      {/* Formulaire de réservation */}
-      {selectedCar && (
-        <div className="border p-4 mt-4">
-          <h2 className="text-lg font-bold">📅 Réserver {selectedCar.name}</h2>
-          <label className="block">Nom :</label>
-          <input type="text" value={userName} onChange={(e) => setUserName(e.target.value)} className="border p-2 w-full" />
-          <label className="block">Date de début :</label>
-          <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="border p-2 w-full" />
-          <label className="block">Date de fin :</label>
-          <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="border p-2 w-full" />
-          <p className="font-bold mt-2">Total : {totalPrice}€</p>
-          <button onClick={handleReserve} className="bg-green-500 text-white p-2 rounded w-full mt-2">
-            Confirmer la réservation
-          </button>
-        </div>
-      )}
     </div>
   );
 }
