@@ -2,39 +2,16 @@ import axios from 'axios';
 
 const API_URL = 'http://localhost:5000/api';
 
-// ✅ Récupérer tous les utilisateurs
-export const getUsers = async () => {
+// ✅ Inscription d'un utilisateur
+export const registerUser = async (username, email, password) => {
   try {
-    const response = await axios.get(`${API_URL}/users`);
+    const response = await axios.post(`${API_URL}/users/register`, { username, email, password });
     return response.data;
   } catch (error) {
-    console.error('Erreur API:', error);
-    return [];
-  }
-};
-
-// ✅ Créer un nouvel utilisateur
-export const createUser = async (name, email) => {
-  try {
-    const response = await axios.post(`${API_URL}/users`, { name, email });
-    return response.data;
-  } catch (error) {
-    console.error('Erreur API:', error);
+    console.error('❌ Erreur API:', error);
     return null;
   }
 };
-
-export const getCars = async (brand = '') => {
-    try {
-      const response = await axios.get(`${API_URL}/cars?brand=${brand}`); // Mettre /cars ici
-      return response.data;
-    } catch (error) {
-      console.error('❌ Erreur lors de la récupération des voitures :', error);
-      return [];
-    }
-  };
-  
-  
 
 // ✅ Réserver une voiture
 export const createReservation = async (userName, carId, startDate, endDate, totalPrice) => {
@@ -53,14 +30,24 @@ export const createReservation = async (userName, carId, startDate, endDate, tot
   }
 };
 
+// ✅ Récupérer toutes les voitures
+export const getCars = async (brand = '') => {
+  try {
+    const response = await axios.get(`${API_URL}/cars?brand=${brand}`);
+    return response.data;
+  } catch (error) {
+    console.error('❌ Erreur API:', error);
+    return [];
+  }
+};
+
 // ✅ Récupérer toutes les réservations
 export const getReservations = async () => {
-    try {
-      const response = await axios.get(`${API_URL}/reservations`);
-      return response.data;
-    } catch (error) {
-      console.error('Erreur API:', error);
-      return [];
-    }
-  };
-  
+  try {
+    const response = await axios.get(`${API_URL}/reservations`);
+    return response.data;
+  } catch (error) {
+    console.error('❌ Erreur API:', error);
+    return [];
+  }
+};
