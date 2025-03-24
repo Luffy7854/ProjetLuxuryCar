@@ -94,17 +94,31 @@ function App() {
     }
   };
 
+  const handleLogout = () => {
+    setLoggedInUser(null);
+    localStorage.removeItem('user');
+  };
+
   return (
     <div className="relative">
       <header className="flex justify-between p-4 items-center">
         <h1 className="text-2xl font-bold text-red-500">🚗 Location de voitures 🚀</h1>
         <div className="flex items-center gap-4">
           {loggedInUser ? (
-            <span className="text-gray-800 font-semibold">👋 Bonjour, {loggedInUser}</span>
+            <>
+              <span className="text-gray-800 font-semibold">👋 Bonjour, {loggedInUser}</span>
+              <button className="bg-gray-700 text-white px-3 py-2 rounded" onClick={handleLogout}>
+                Déconnexion
+              </button>
+            </>
           ) : (
             <>
-              <button className="bg-blue-500 text-white px-4 py-2 rounded" onClick={() => setShowLogin(true)}>Se connecter</button>
-              <button className="bg-green-500 text-white px-4 py-2 rounded" onClick={() => setShowSignup(true)}>S'inscrire</button>
+              <button className="bg-blue-500 text-white px-4 py-2 rounded" onClick={() => setShowLogin(true)}>
+                Se connecter
+              </button>
+              <button className="bg-green-500 text-white px-4 py-2 rounded" onClick={() => setShowSignup(true)}>
+                S'inscrire
+              </button>
             </>
           )}
         </div>
