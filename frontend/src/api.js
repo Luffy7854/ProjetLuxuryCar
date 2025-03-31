@@ -48,6 +48,7 @@ export const getReservations = async () => {
   }
 };
 
+// ✅ Modifié : retourne aussi l'erreur serveur
 export const createReservation = async (userName, carId, startDate, endDate, totalPrice) => {
   try {
     const response = await axios.post(`${API_URL}/reservations`, {
@@ -59,7 +60,17 @@ export const createReservation = async (userName, carId, startDate, endDate, tot
     });
     return response.data;
   } catch (error) {
-    console.error('Erreur réservation:', error);
-    return null;
+    console.error('Erreur réservation:', error.response?.data?.error || error.message);
+    return { error: error.response?.data?.error || 'Erreur inconnue' };
+  }
+};
+
+export const getUserReservations = async (username) => {
+  try {
+    const response = await axios.get(`${API_URL}/reservations/user/${username}`);
+    return response.data;
+  } catch (error) {
+    console.error('Erreur chargement réservations utilisateur:', error);
+    return [];
   }
 };

@@ -5,15 +5,16 @@ import {
   createReservation,
   registerUser,
   loginUser,
+  getUserReservations,
 } from './api';
 import AdminPanel from './AdminPanel';
 
 function App() {
   const [cars, setCars] = useState([]);
-  const [reservations, setReservations] = useState([]);
+  const [reservations, setReservations] = useState([]); // Réservations globales
+  const [userReservations, setUserReservations] = useState([]); // Réservations de l'utilisateur connecté
   const [brand, setBrand] = useState('');
   const [selectedCar, setSelectedCar] = useState(null);
-  const [userName, setUserName] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [totalPrice, setTotalPrice] = useState(0);
@@ -53,7 +54,7 @@ function App() {
   };
 
   const handleReserve = async () => {
-    if (!selectedCar || !userName || !startDate || !endDate) {
+    if (!selectedCar || !loggedInUser || !startDate || !endDate) {
       alert('Veuillez remplir tous les champs');
       return;
     }
@@ -65,11 +66,12 @@ function App() {
 
     setTotalPrice(price);
 
-    const reservation = await createReservation(userName, selectedCar.id, startDate, endDate, price);
+    const reservation = await createReservation(loggedInUser, selectedCar.id, startDate, endDate, price);
 
-    if (reservation) {
-      alert(`Réservation confirmée pour ${userName}`);
-      setUserName('');
+    if (reservation?.error) {
+      alert(reservation.error); // Affiche le message retourné par l’API (ex: chevauchement)
+    } else if (reservation) {
+      alert(`Réservation confirmée pour ${loggedInUser}`);
       setStartDate('');
       setEndDate('');
       setSelectedCar(null);
@@ -116,6 +118,17 @@ function App() {
     setLoggedInUser(null);
     localStorage.removeItem('user');
     setShowAdminPanel(false);
+  };
+
+  useEffect(() => {
+    if (loggedInUser) {
+      fetchUserReservations(loggedInUser);
+    }
+  }, [loggedInUser]);
+
+  const fetchUserReservations = async (username) => {
+    const data = await getUserReservations(username);
+    setUserReservations(data); // Met à jour uniquement les réservations de l'utilisateur connecté
   };
 
   return (
@@ -194,41 +207,76 @@ function App() {
         </div>
       )}
 
-      {showSignup && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+      {/* Liste des voitures */}
+      <div className="flex flex-wrap p-4 gap-4">
+        {cars.map((car) => (
+          <div key={car.id} className="border p-4 w-64">
+            <img src={car.imageUrl} alt={car.name} className="w-full" />
+            <h3 className="font-bold">{car.name}</h3>
+            <p>Marque : {car.brand}</p>
+            <p>Vitesse max : {car.max_speed} km/h</p>
+            <p>Type : {car.type}</p>
+            <p>Prix : {car.price_per_day} € / jour</p>
+            <button
+              onClick={() => setSelectedCar(car)}
+              className="bg-blue-500 text-white p-2 rounded w-full mt-2"
+            >
+              📅 Réserver
+            </button>
+          </div>
+        ))}
+      </div>
+
+      {/* Modal de réservation */}
+      {selectedCar && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
           <div className="bg-white p-6 rounded w-96">
-            <h2 className="text-xl mb-4">Créer un compte</h2>
-            <form onSubmit={handleRegisterSubmit}>
-              <input type="text" name="username" placeholder="Nom d'utilisateur" value={registerData.username} onChange={handleRegisterChange} className="border p-2 mb-2 w-full" required />
-              <input type="email" name="email" placeholder="Email" value={registerData.email} onChange={handleRegisterChange} className="border p-2 mb-2 w-full" required />
-              <input type="password" name="password" placeholder="Mot de passe" value={registerData.password} onChange={handleRegisterChange} className="border p-2 mb-2 w-full" required />
-              <select name="role" value={registerData.role} onChange={handleRegisterChange} className="border p-2 mb-2 w-full">
-                <option value="user">Visiteur</option>
-                <option value="admin">Admin</option>
-              </select>
-              <button type="submit" className="bg-green-500 text-white p-2 rounded w-full mt-2">S'inscrire</button>
-            </form>
-            <button onClick={() => setShowSignup(false)} className="bg-red-500 text-white p-2 rounded w-full mt-2">Fermer</button>
+            <h2 className="text-xl font-bold mb-4">Réserver {selectedCar.name}</h2>
+
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="border p-2 mb-2 w-full"
+            />
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="border p-2 mb-2 w-full"
+            />
+            <button onClick={handleReserve} className="bg-green-500 text-white p-2 rounded w-full mt-2">
+              Confirmer la réservation
+            </button>
+            <button
+              onClick={() => setSelectedCar(null)}
+              className="bg-red-500 text-white p-2 rounded w-full mt-2"
+            >
+              Annuler
+            </button>
           </div>
         </div>
       )}
 
-      {/* Liste voitures */}
-      {!showAdminPanel && (
-        <div className="flex flex-wrap p-4 gap-4">
-          {cars.map((car) => (
-            <div key={car.id} className="border p-4 w-64">
-              <img src={car.imageUrl} alt={car.name} className="w-full" />
-              <h3 className="font-bold">{car.name}</h3>
-              <p>Marque : {car.brand}</p>
-              <p>Vitesse max : {car.max_speed} km/h</p>
-              <p>Type : {car.type}</p>
-              <p>Prix : {car.price_per_day} € / jour</p>
-              <button onClick={() => setSelectedCar(car)} className="bg-blue-500 text-white p-2 rounded w-full mt-2">
-                📅 Réserver
-              </button>
-            </div>
-          ))}
+      {/* Vos réservations */}
+      {loggedInUser && userReservations.length > 0 && (
+        <div className="p-4">
+          <h2 className="text-xl font-bold mb-2">📋 Vos réservations</h2>
+          <ul className="space-y-2">
+            {userReservations.map((res) => (
+              <li key={res.id} className="border p-3 rounded shadow">
+                <p>
+                  <strong>Voiture :</strong> {res.Car.name}
+                </p>
+                <p>
+                  <strong>Du</strong> {res.start_date} <strong>au</strong> {res.end_date}
+                </p>
+                <p>
+                  <strong>Prix total :</strong> {res.total_price} €
+                </p>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
     </div>
