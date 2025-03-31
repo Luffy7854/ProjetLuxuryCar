@@ -6,6 +6,7 @@ import {
   registerUser,
   loginUser,
 } from './api';
+import AdminPanel from './AdminPanel';
 
 function App() {
   const [cars, setCars] = useState([]);
@@ -18,11 +19,23 @@ function App() {
   const [totalPrice, setTotalPrice] = useState(0);
   const [showLogin, setShowLogin] = useState(false);
   const [showSignup, setShowSignup] = useState(false);
-  const [loggedInUser, setLoggedInUser] = useState(localStorage.getItem('user') || null);
+  const [showAdminPanel, setShowAdminPanel] = useState(false);
+
+  const [loggedInUser, setLoggedInUser] = useState(() => {
+    const stored = localStorage.getItem('user');
+    return stored ? JSON.parse(stored) : null;
+  });
+
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
-  const [registerData, setRegisterData] = useState({ username: '', email: '', password: '' });
+
+  const [registerData, setRegisterData] = useState({
+    username: '',
+    email: '',
+    password: '',
+    role: 'user',
+  });
 
   useEffect(() => {
     fetchCars();
@@ -73,7 +86,12 @@ function App() {
 
   const handleRegisterSubmit = async (e) => {
     e.preventDefault();
-    const result = await registerUser(registerData.username, registerData.email, registerData.password);
+    const result = await registerUser(
+      registerData.username,
+      registerData.email,
+      registerData.password,
+      registerData.role
+    );
     if (result?.user) {
       alert('Inscription réussie');
       setShowSignup(false);
@@ -85,8 +103,8 @@ function App() {
   const handleLoginSubmit = async () => {
     const result = await loginUser(loginEmail, loginPassword);
     if (result?.user) {
-      setLoggedInUser(result.user.username);
-      localStorage.setItem('user', result.user.username);
+      setLoggedInUser(result.user);
+      localStorage.setItem('user', JSON.stringify(result.user));
       setShowLogin(false);
       setLoginError('');
     } else {
@@ -97,6 +115,7 @@ function App() {
   const handleLogout = () => {
     setLoggedInUser(null);
     localStorage.removeItem('user');
+    setShowAdminPanel(false);
   };
 
   return (
@@ -106,17 +125,36 @@ function App() {
         <div className="flex items-center gap-4">
           {loggedInUser ? (
             <>
-              <span className="text-gray-800 font-semibold">👋 Bonjour, {loggedInUser}</span>
-              <button className="bg-gray-700 text-white px-3 py-2 rounded" onClick={handleLogout}>
+              <span className="text-gray-800 font-semibold">
+                👋 Bonjour, {loggedInUser.username} ({loggedInUser.role})
+              </span>
+              {loggedInUser.role === 'admin' && (
+                <button
+                  className="bg-yellow-500 text-white px-3 py-2 rounded"
+                  onClick={() => setShowAdminPanel(!showAdminPanel)}
+                >
+                  {showAdminPanel ? 'Fermer Gérer' : 'Gérer'}
+                </button>
+              )}
+              <button
+                className="bg-gray-700 text-white px-3 py-2 rounded"
+                onClick={handleLogout}
+              >
                 Déconnexion
               </button>
             </>
           ) : (
             <>
-              <button className="bg-blue-500 text-white px-4 py-2 rounded" onClick={() => setShowLogin(true)}>
+              <button
+                className="bg-blue-500 text-white px-4 py-2 rounded"
+                onClick={() => setShowLogin(true)}
+              >
                 Se connecter
               </button>
-              <button className="bg-green-500 text-white px-4 py-2 rounded" onClick={() => setShowSignup(true)}>
+              <button
+                className="bg-green-500 text-white px-4 py-2 rounded"
+                onClick={() => setShowSignup(true)}
+              >
                 S'inscrire
               </button>
             </>
@@ -124,21 +162,38 @@ function App() {
         </div>
       </header>
 
-      {/* Login modal */}
+      {showAdminPanel && loggedInUser?.role === 'admin' && <AdminPanel />}
+
+      {/* Modals Login / Register */}
       {showLogin && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
           <div className="bg-white p-6 rounded w-96">
             <h2 className="text-xl mb-4">Connexion</h2>
-            <input type="email" placeholder="Email" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} className="border p-2 mb-2 w-full" />
-            <input type="password" placeholder="Mot de passe" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} className="border p-2 mb-2 w-full" />
-            {loginError && <p className="text-red-500 text-sm mb-2">{loginError}</p>}
-            <button onClick={handleLoginSubmit} className="bg-blue-500 text-white p-2 rounded w-full">Se connecter</button>
-            <button onClick={() => setShowLogin(false)} className="bg-red-500 text-white p-2 rounded w-full mt-2">Fermer</button>
+            <input
+              type="email"
+              placeholder="Email"
+              value={loginEmail}
+              onChange={(e) => setLoginEmail(e.target.value)}
+              className="border p-2 mb-2 w-full"
+            />
+            <input
+              type="password"
+              placeholder="Mot de passe"
+              value={loginPassword}
+              onChange={(e) => setLoginPassword(e.target.value)}
+              className="border p-2 mb-2 w-full"
+            />
+            {loginError && <p className="text-red-500">{loginError}</p>}
+            <button onClick={handleLoginSubmit} className="bg-blue-500 text-white p-2 w-full mt-2 rounded">
+              Se connecter
+            </button>
+            <button onClick={() => setShowLogin(false)} className="bg-red-500 text-white p-2 w-full mt-2 rounded">
+              Fermer
+            </button>
           </div>
         </div>
       )}
 
-      {/* Register modal */}
       {showSignup && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
           <div className="bg-white p-6 rounded w-96">
@@ -147,6 +202,10 @@ function App() {
               <input type="text" name="username" placeholder="Nom d'utilisateur" value={registerData.username} onChange={handleRegisterChange} className="border p-2 mb-2 w-full" required />
               <input type="email" name="email" placeholder="Email" value={registerData.email} onChange={handleRegisterChange} className="border p-2 mb-2 w-full" required />
               <input type="password" name="password" placeholder="Mot de passe" value={registerData.password} onChange={handleRegisterChange} className="border p-2 mb-2 w-full" required />
+              <select name="role" value={registerData.role} onChange={handleRegisterChange} className="border p-2 mb-2 w-full">
+                <option value="user">Visiteur</option>
+                <option value="admin">Admin</option>
+              </select>
               <button type="submit" className="bg-green-500 text-white p-2 rounded w-full mt-2">S'inscrire</button>
             </form>
             <button onClick={() => setShowSignup(false)} className="bg-red-500 text-white p-2 rounded w-full mt-2">Fermer</button>
@@ -155,19 +214,23 @@ function App() {
       )}
 
       {/* Liste voitures */}
-      <div className="flex flex-wrap p-4 gap-4">
-        {cars.map((car) => (
-          <div key={car.id} className="border p-4 w-64">
-            <img src={car.imageUrl} alt={car.name} className="w-full" />
-            <h3 className="font-bold">{car.name}</h3>
-            <p>Marque : {car.brand}</p>
-            <p>Vitesse max : {car.max_speed} km/h</p>
-            <p>Type : {car.type}</p>
-            <p>Prix : {car.price_per_day} € / jour</p>
-            <button onClick={() => setSelectedCar(car)} className="bg-blue-500 text-white p-2 rounded w-full mt-2">📅 Réserver</button>
-          </div>
-        ))}
-      </div>
+      {!showAdminPanel && (
+        <div className="flex flex-wrap p-4 gap-4">
+          {cars.map((car) => (
+            <div key={car.id} className="border p-4 w-64">
+              <img src={car.imageUrl} alt={car.name} className="w-full" />
+              <h3 className="font-bold">{car.name}</h3>
+              <p>Marque : {car.brand}</p>
+              <p>Vitesse max : {car.max_speed} km/h</p>
+              <p>Type : {car.type}</p>
+              <p>Prix : {car.price_per_day} € / jour</p>
+              <button onClick={() => setSelectedCar(car)} className="bg-blue-500 text-white p-2 rounded w-full mt-2">
+                📅 Réserver
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
