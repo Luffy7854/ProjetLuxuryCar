@@ -24,8 +24,14 @@ function App() {
 
   const [loggedInUser, setLoggedInUser] = useState(() => {
     const stored = localStorage.getItem('user');
-    return stored ? JSON.parse(stored) : null;
+    try {
+      return stored ? JSON.parse(stored) : null; // Essaye de parser si stocké
+    } catch (error) {
+      console.error('Erreur lors du parsing du user depuis localStorage', error);
+      return null; // Si parsing échoue, retourne null
+    }
   });
+  
 
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
