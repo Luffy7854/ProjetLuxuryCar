@@ -11,8 +11,8 @@ import AdminPanel from './AdminPanel';
 
 function App() {
   const [cars, setCars] = useState([]);
-  const [reservations, setReservations] = useState([]); // Réservations globales
-  const [userReservations, setUserReservations] = useState([]); // Réservations de l'utilisateur connecté
+  const [reservations, setReservations] = useState([]);
+  const [userReservations, setUserReservations] = useState([]);
   const [brand, setBrand] = useState('');
   const [selectedCar, setSelectedCar] = useState(null);
   const [startDate, setStartDate] = useState('');
@@ -24,7 +24,11 @@ function App() {
 
   const [loggedInUser, setLoggedInUser] = useState(() => {
     const stored = localStorage.getItem('user');
-    return stored ? JSON.parse(stored) : null;
+    try {
+      return stored ? JSON.parse(stored) : null;
+    } catch (e) {
+      return null;
+    }
   });
 
   const [loginEmail, setLoginEmail] = useState('');
@@ -53,6 +57,11 @@ function App() {
     setReservations(data);
   };
 
+  const fetchUserReservations = async (username) => {
+    const data = await getUserReservations(username);
+    setUserReservations(data);
+  };
+
   const handleReserve = async () => {
     if (!selectedCar || !loggedInUser || !startDate || !endDate) {
       alert('Veuillez remplir tous les champs');
@@ -69,16 +78,34 @@ function App() {
     const reservation = await createReservation(loggedInUser, selectedCar.id, startDate, endDate, price);
 
     if (reservation?.error) {
-      alert(reservation.error); // Affiche le message retourné par l’API (ex: chevauchement)
+      alert(reservation.error);
     } else if (reservation) {
-      alert(`Réservation confirmée pour ${loggedInUser}`);
+      alert(`Réservation confirmée pour ${loggedInUser.username}`);
       setStartDate('');
       setEndDate('');
       setSelectedCar(null);
       setTotalPrice(0);
       fetchReservations();
+      fetchUserReservations(loggedInUser.username);
     } else {
       alert('Erreur réservation');
+    }
+  };
+
+  const handleDeleteReservation = async (id) => {
+    if (!window.confirm("Supprimer cette réservation ?")) return;
+    try {
+      const res = await fetch(`http://localhost:5000/api/reservations/${id}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        alert("Réservation supprimée.");
+        fetchUserReservations(loggedInUser.username);
+      } else {
+        alert("Erreur suppression");
+      }
+    } catch (error) {
+      alert("Erreur serveur");
     }
   };
 
@@ -97,6 +124,7 @@ function App() {
     if (result?.user) {
       alert('Inscription réussie');
       setShowSignup(false);
+      setRegisterData({ username: '', email: '', password: '', role: 'user' });
     } else {
       alert('Erreur : ' + (result?.error || 'Inconnue'));
     }
@@ -109,6 +137,7 @@ function App() {
       localStorage.setItem('user', JSON.stringify(result.user));
       setShowLogin(false);
       setLoginError('');
+      fetchUserReservations(result.user.username);
     } else {
       setLoginError(result?.error || 'Erreur inconnue');
     }
@@ -118,17 +147,6 @@ function App() {
     setLoggedInUser(null);
     localStorage.removeItem('user');
     setShowAdminPanel(false);
-  };
-
-  useEffect(() => {
-    if (loggedInUser) {
-      fetchUserReservations(loggedInUser);
-    }
-  }, [loggedInUser]);
-
-  const fetchUserReservations = async (username) => {
-    const data = await getUserReservations(username);
-    setUserReservations(data); // Met à jour uniquement les réservations de l'utilisateur connecté
   };
 
   return (
@@ -149,25 +167,16 @@ function App() {
                   {showAdminPanel ? 'Fermer Gérer' : 'Gérer'}
                 </button>
               )}
-              <button
-                className="bg-gray-700 text-white px-3 py-2 rounded"
-                onClick={handleLogout}
-              >
+              <button className="bg-gray-700 text-white px-3 py-2 rounded" onClick={handleLogout}>
                 Déconnexion
               </button>
             </>
           ) : (
             <>
-              <button
-                className="bg-blue-500 text-white px-4 py-2 rounded"
-                onClick={() => setShowLogin(true)}
-              >
+              <button className="bg-blue-500 text-white px-4 py-2 rounded" onClick={() => setShowLogin(true)}>
                 Se connecter
               </button>
-              <button
-                className="bg-green-500 text-white px-4 py-2 rounded"
-                onClick={() => setShowSignup(true)}
-              >
+              <button className="bg-green-500 text-white px-4 py-2 rounded" onClick={() => setShowSignup(true)}>
                 S'inscrire
               </button>
             </>
@@ -175,11 +184,59 @@ function App() {
         </div>
       </header>
 
-      {showAdminPanel && loggedInUser?.role === 'admin' && <AdminPanel />}
+      {showAdminPanel && loggedInUser?.role === 'admin' && (
+        <div className="p-4 bg-gray-100 rounded shadow-md">
+          <AdminPanel />
+        </div>
+      )}
 
-      {/* Modals Login / Register */}
+      {/* ✅ Modal d'inscription */}
+      {showSignup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+          <div className="bg-white p-6 rounded w-96">
+            <h2 className="text-xl mb-4">Inscription</h2>
+            <form onSubmit={handleRegisterSubmit}>
+              <input
+                type="text"
+                name="username"
+                placeholder="Nom d'utilisateur"
+                value={registerData.username}
+                onChange={handleRegisterChange}
+                className="border p-2 mb-2 w-full"
+                required
+              />
+              <input
+                type="email"
+                name="email"
+                placeholder="Email"
+                value={registerData.email}
+                onChange={handleRegisterChange}
+                className="border p-2 mb-2 w-full"
+                required
+              />
+              <input
+                type="password"
+                name="password"
+                placeholder="Mot de passe"
+                value={registerData.password}
+                onChange={handleRegisterChange}
+                className="border p-2 mb-2 w-full"
+                required
+              />
+              <button type="submit" className="bg-green-500 text-white p-2 w-full mt-2 rounded">
+                S'inscrire
+              </button>
+              <button onClick={() => setShowSignup(false)} type="button" className="bg-red-500 text-white p-2 w-full mt-2 rounded">
+                Annuler
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ✅ Modal de connexion */}
       {showLogin && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
           <div className="bg-white p-6 rounded w-96">
             <h2 className="text-xl mb-4">Connexion</h2>
             <input
@@ -201,7 +258,7 @@ function App() {
               Se connecter
             </button>
             <button onClick={() => setShowLogin(false)} className="bg-red-500 text-white p-2 w-full mt-2 rounded">
-              Fermer
+              Annuler
             </button>
           </div>
         </div>
@@ -232,28 +289,10 @@ function App() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
           <div className="bg-white p-6 rounded w-96">
             <h2 className="text-xl font-bold mb-4">Réserver {selectedCar.name}</h2>
-
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="border p-2 mb-2 w-full"
-            />
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="border p-2 mb-2 w-full"
-            />
-            <button onClick={handleReserve} className="bg-green-500 text-white p-2 rounded w-full mt-2">
-              Confirmer la réservation
-            </button>
-            <button
-              onClick={() => setSelectedCar(null)}
-              className="bg-red-500 text-white p-2 rounded w-full mt-2"
-            >
-              Annuler
-            </button>
+            <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="border p-2 mb-2 w-full" />
+            <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="border p-2 mb-2 w-full" />
+            <button onClick={handleReserve} className="bg-green-500 text-white p-2 rounded w-full mt-2">Confirmer la réservation</button>
+            <button onClick={() => setSelectedCar(null)} className="bg-red-500 text-white p-2 rounded w-full mt-2">Annuler</button>
           </div>
         </div>
       )}
@@ -265,15 +304,16 @@ function App() {
           <ul className="space-y-2">
             {userReservations.map((res) => (
               <li key={res.id} className="border p-3 rounded shadow">
-                <p>
-                  <strong>Voiture :</strong> {res.Car.name}
-                </p>
-                <p>
-                  <strong>Du</strong> {res.start_date} <strong>au</strong> {res.end_date}
-                </p>
-                <p>
-                  <strong>Prix total :</strong> {res.total_price} €
-                </p>
+                <p><strong>Voiture :</strong> {res.Car.name}</p>
+                <p><strong>Du</strong> {res.start_date} <strong>au</strong> {res.end_date}</p>
+                <p><strong>Prix total :</strong> {res.total_price} €</p>
+                <p><strong>Statut :</strong> {res.status}</p>
+                <button
+                  onClick={() => handleDeleteReservation(res.id)}
+                  className="bg-red-500 text-white px-3 py-1 mt-2 rounded"
+                >
+                  Supprimer
+                </button>
               </li>
             ))}
           </ul>

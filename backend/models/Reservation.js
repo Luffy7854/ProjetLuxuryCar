@@ -33,14 +33,29 @@ const Reservation = sequelize.define('Reservation', {
     allowNull: false
   },
   status: {
-    type: DataTypes.ENUM('en attente', 'confirmée', 'annulée'),
-    defaultValue: 'en attente'
+    type: DataTypes.ENUM('en cours', 'terminé'), // ✅ statuts mis à jour ici
+    defaultValue: 'en cours'
   }
 }, {
   timestamps: true
 });
 
-// Définition de la relation entre les voitures et les réservations
+// Relation entre les voitures et les réservations
 Reservation.belongsTo(Car, { foreignKey: 'car_id' });
 
 module.exports = Reservation;
+
+// Supprimer une réservation
+router.delete('/:id', async (req, res) => {
+  try {
+    const id = req.params.id;
+    const deleted = await Reservation.destroy({ where: { id } });
+    if (deleted) {
+      res.json({ message: 'Réservation supprimée' });
+    } else {
+      res.status(404).json({ error: 'Réservation non trouvée' });
+    }
+  } catch (error) {
+    res.status(500).json({ error: 'Erreur lors de la suppression de la réservation' });
+  }
+});

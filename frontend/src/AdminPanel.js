@@ -6,6 +6,7 @@ const API_URL = 'http://localhost:5000/api';
 function AdminPanel() {
   const [users, setUsers] = useState([]);
   const [cars, setCars] = useState([]);
+  const [reservations, setReservations] = useState([]); // 🆕
   const [newCar, setNewCar] = useState({
     name: '',
     brand: '',
@@ -18,40 +19,70 @@ function AdminPanel() {
   useEffect(() => {
     fetchUsers();
     fetchCars();
+    fetchReservations(); // 🆕
   }, []);
 
   const fetchUsers = async () => {
-    const response = await axios.get(`${API_URL}/users`);
-    setUsers(response.data);
+    try {
+      const response = await axios.get(`${API_URL}/users`);
+      setUsers(response.data);
+    } catch (error) {
+      console.error('Erreur chargement utilisateurs :', error);
+    }
   };
 
   const fetchCars = async () => {
-    const response = await axios.get(`${API_URL}/cars`);
-    setCars(response.data);
+    try {
+      const response = await axios.get(`${API_URL}/cars`);
+      setCars(response.data);
+    } catch (error) {
+      console.error('Erreur chargement voitures :', error);
+    }
+  };
+
+  const fetchReservations = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/reservations`);
+      setReservations(response.data);
+    } catch (error) {
+      console.error('Erreur chargement réservations :', error);
+    }
   };
 
   const handleDeleteUser = async (id) => {
-    await axios.delete(`${API_URL}/users/${id}`);
-    fetchUsers();
+    try {
+      await axios.delete(`${API_URL}/users/${id}`);
+      fetchUsers();
+    } catch (error) {
+      console.error('Erreur suppression utilisateur :', error);
+    }
   };
 
   const handleDeleteCar = async (id) => {
-    await axios.delete(`${API_URL}/cars/${id}`);
-    fetchCars();
+    try {
+      await axios.delete(`${API_URL}/cars/${id}`);
+      fetchCars();
+    } catch (error) {
+      console.error('Erreur suppression voiture :', error);
+    }
   };
 
   const handleAddCar = async (e) => {
     e.preventDefault();
-    await axios.post(`${API_URL}/cars`, newCar);
-    setNewCar({
-      name: '',
-      brand: '',
-      max_speed: '',
-      type: 'route',
-      price_per_day: '',
-      image: '',
-    });
-    fetchCars();
+    try {
+      await axios.post(`${API_URL}/cars`, newCar);
+      setNewCar({
+        name: '',
+        brand: '',
+        max_speed: '',
+        type: 'route',
+        price_per_day: '',
+        image: '',
+      });
+      fetchCars();
+    } catch (error) {
+      console.error('Erreur ajout voiture :', error);
+    }
   };
 
   const handleChange = (e) => {
@@ -59,8 +90,12 @@ function AdminPanel() {
   };
 
   const handlePromoteToAdmin = async (id) => {
-    await axios.put(`${API_URL}/users/promote/${id}`, { role: 'admin' });
-    fetchUsers();
+    try {
+      await axios.put(`${API_URL}/users/promote/${id}`, { role: 'admin' });
+      fetchUsers();
+    } catch (error) {
+      console.error('Erreur promotion admin :', error);
+    }
   };
 
   return (
@@ -85,30 +120,60 @@ function AdminPanel() {
       {/* Liste utilisateurs */}
       <div className="mb-6">
         <h3 className="text-lg font-semibold mb-2">Utilisateurs</h3>
-        <ul>
-          {users.map(user => (
-            <li key={user.id} className="flex justify-between items-center bg-white p-2 mb-1 border rounded">
-              <span>{user.username} ({user.role})</span>
-              <button onClick={() => handleDeleteUser(user.id)} className="bg-red-500 text-white px-2 py-1 rounded">Supprimer</button>
-              {user.role !== 'admin' && (
-                <button onClick={() => handlePromoteToAdmin(user.id)} className="bg-yellow-500 text-white px-2 py-1 rounded">Promouvoir en Admin</button>
-              )}
-            </li>
-          ))}
-        </ul>
+        {users.length === 0 ? (
+          <p className="text-gray-500">Aucun utilisateur.</p>
+        ) : (
+          <ul>
+            {users.map(user => (
+              <li key={user.id} className="flex justify-between items-center bg-white p-2 mb-1 border rounded">
+                <span>{user.username} ({user.role})</span>
+                <div className="flex gap-2">
+                  <button onClick={() => handleDeleteUser(user.id)} className="bg-red-500 text-white px-2 py-1 rounded">Supprimer</button>
+                  {user.role !== 'admin' && (
+                    <button onClick={() => handlePromoteToAdmin(user.id)} className="bg-yellow-500 text-white px-2 py-1 rounded">Promouvoir en Admin</button>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       {/* Liste voitures */}
-      <div>
+      <div className="mb-6">
         <h3 className="text-lg font-semibold mb-2">Voitures</h3>
-        <ul>
-          {cars.map(car => (
-            <li key={car.id} className="flex justify-between items-center bg-white p-2 mb-1 border rounded">
-              <span>{car.name} ({car.brand})</span>
-              <button onClick={() => handleDeleteCar(car.id)} className="bg-red-500 text-white px-2 py-1 rounded">Supprimer</button>
-            </li>
-          ))}
-        </ul>
+        {cars.length === 0 ? (
+          <p className="text-gray-500">Aucune voiture.</p>
+        ) : (
+          <ul>
+            {cars.map(car => (
+              <li key={car.id} className="flex justify-between items-center bg-white p-2 mb-1 border rounded">
+                <span>{car.name} ({car.brand})</span>
+                <button onClick={() => handleDeleteCar(car.id)} className="bg-red-500 text-white px-2 py-1 rounded">Supprimer</button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {/* 📋 Suivi des réservations */}
+      <div className="mt-6">
+        <h3 className="text-lg font-semibold mb-2">📋 Suivi des réservations</h3>
+        {reservations.length === 0 ? (
+          <p className="text-gray-500">Aucune réservation enregistrée.</p>
+        ) : (
+          <ul>
+            {reservations.map((res) => (
+              <li key={res.id} className="bg-white border p-3 mb-2 rounded shadow">
+                <p><strong>Utilisateur :</strong> {res.user_name}</p>
+                <p><strong>Voiture :</strong> {res.Car?.name} ({res.Car?.brand})</p>
+                <p><strong>Du</strong> {res.start_date} <strong>au</strong> {res.end_date}</p>
+                <p><strong>Prix total :</strong> {res.total_price} €</p>
+                <p><strong>Statut :</strong> {res.status}</p>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </div>
   );
