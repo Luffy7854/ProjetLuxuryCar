@@ -31,7 +31,8 @@ export const loginUser = async (email, password) => {
 export const getCars = async (brand = '') => {
   try {
     const response = await axios.get(`${API_URL}/cars?brand=${brand}`);
-    return response.data;
+    console.log('Réponse API pour les voitures:', response); // Log la réponse complète
+    return response.data; // Renvoie seulement les données JSON
   } catch (error) {
     console.error('Erreur chargement voitures:', error);
     return [];
