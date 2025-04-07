@@ -35,7 +35,6 @@ function App() {
     username: '',
     email: '',
     password: '',
-    role: 'user',
   });
 
   useEffect(() => {
@@ -72,7 +71,7 @@ function App() {
     setTotalPrice(price);
 
     const reservation = await createReservation(
-      loggedInUser.username, // ✅ correction ici
+      loggedInUser.username,
       selectedCar.id,
       startDate,
       endDate,
@@ -121,12 +120,12 @@ function App() {
       registerData.username,
       registerData.email,
       registerData.password,
-      registerData.role
+      'user' // ✅ rôle forcé ici
     );
     if (result?.user) {
       alert('Inscription réussie');
       setShowSignup(false);
-      setRegisterData({ username: '', email: '', password: '', role: 'user' });
+      setRegisterData({ username: '', email: '', password: '' });
     } else {
       alert('Erreur : ' + (result?.error || 'Inconnue'));
     }
@@ -224,15 +223,6 @@ function App() {
                 className="border p-2 mb-2 w-full"
                 required
               />
-              <select
-                name="role"
-                value={registerData.role}
-                onChange={handleRegisterChange}
-                className="border p-2 mb-2 w-full"
-              >
-                <option value="user">Utilisateur</option>
-                <option value="admin">Administrateur</option>
-              </select>
               <button type="submit" className="bg-green-500 text-white p-2 w-full mt-2 rounded">
                 S'inscrire
               </button>
