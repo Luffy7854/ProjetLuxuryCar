@@ -42,6 +42,13 @@ function App() {
     fetchReservations();
   }, [brand]);
 
+  // ✅ Ajout : mise à jour des statuts des réservations utilisateur si connecté
+  useEffect(() => {
+    if (loggedInUser) {
+      fetchUserReservations(loggedInUser.username);
+    }
+  }, [loggedInUser]);
+
   const fetchCars = async () => {
     const data = await getCars(brand);
     setCars(data);
@@ -127,7 +134,7 @@ function App() {
       registerData.username,
       registerData.email,
       registerData.password,
-      'user' // rôle fixé
+      'user'
     );
     if (result?.user) {
       alert('Inscription réussie');

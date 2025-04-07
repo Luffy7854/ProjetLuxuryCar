@@ -5,12 +5,26 @@ const Car = require('../models/Car');
 
 const router = express.Router();
 
-// 📌 Récupérer toutes les réservations avec les infos des voitures
+// 📌 Récupérer toutes les réservations avec mise à jour automatique des statuts
 router.get('/', async (req, res) => {
   try {
+    const today = new Date();
+
+    // 🔁 Met à jour les réservations terminées automatiquement
+    await Reservation.update(
+      { status: 'terminé' },
+      {
+        where: {
+          end_date: { [Op.lt]: today },
+          status: 'en cours',
+        },
+      }
+    );
+
     const reservations = await Reservation.findAll({
       include: [{ model: Car }],
     });
+
     res.json(reservations);
   } catch (error) {
     console.error('Erreur récupération réservations :', error);
@@ -27,12 +41,10 @@ router.post('/', async (req, res) => {
     const start = new Date(start_date);
     const end = new Date(end_date);
 
-    // ❌ Vérifie si la date de début ou fin est passée ou invalide
     if (start < today || end < today || end < start) {
       return res.status(400).json({ error: 'Dates invalides. Impossible de réserver dans le passé.' });
     }
 
-    // 🔍 Vérifie s'il existe déjà une réservation chevauchante pour cette voiture
     const existingReservation = await Reservation.findOne({
       where: {
         car_id,
@@ -55,7 +67,6 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'Cette voiture est déjà réservée à ces dates.' });
     }
 
-    // ✅ Crée la réservation
     const reservation = await Reservation.create({
       user_name,
       car_id,
@@ -76,10 +87,25 @@ router.get('/user/:username', async (req, res) => {
   const { username } = req.params;
 
   try {
+    const today = new Date();
+
+    // ✅ Met à jour les statuts expirés pour cet utilisateur
+    await Reservation.update(
+      { status: 'terminé' },
+      {
+        where: {
+          user_name: username,
+          end_date: { [Op.lt]: today },
+          status: 'en cours',
+        },
+      }
+    );
+
     const reservations = await Reservation.findAll({
       where: { user_name: username },
       include: [{ model: Car }],
     });
+
     res.json(reservations);
   } catch (error) {
     console.error('Erreur récupération réservations utilisateur :', error);
