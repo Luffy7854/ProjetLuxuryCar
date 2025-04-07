@@ -6,7 +6,7 @@ const API_URL = 'http://localhost:5000/api';
 function AdminPanel() {
   const [users, setUsers] = useState([]);
   const [cars, setCars] = useState([]);
-  const [reservations, setReservations] = useState([]); // 🆕
+  const [reservations, setReservations] = useState([]);
   const [newCar, setNewCar] = useState({
     name: '',
     brand: '',
@@ -19,7 +19,7 @@ function AdminPanel() {
   useEffect(() => {
     fetchUsers();
     fetchCars();
-    fetchReservations(); // 🆕
+    fetchReservations();
   }, []);
 
   const fetchUsers = async () => {
@@ -64,6 +64,16 @@ function AdminPanel() {
       fetchCars();
     } catch (error) {
       console.error('Erreur suppression voiture :', error);
+    }
+  };
+
+  const handleDeleteReservation = async (id) => {
+    if (!window.confirm("Supprimer cette réservation ?")) return;
+    try {
+      await axios.delete(`${API_URL}/reservations/${id}`);
+      fetchReservations();
+    } catch (error) {
+      console.error('Erreur suppression réservation :', error);
     }
   };
 
@@ -170,6 +180,12 @@ function AdminPanel() {
                 <p><strong>Du</strong> {res.start_date} <strong>au</strong> {res.end_date}</p>
                 <p><strong>Prix total :</strong> {res.total_price} €</p>
                 <p><strong>Statut :</strong> {res.status}</p>
+                <button
+                  onClick={() => handleDeleteReservation(res.id)}
+                  className="bg-red-500 text-white px-3 py-1 mt-2 rounded"
+                >
+                  Supprimer
+                </button>
               </li>
             ))}
           </ul>
