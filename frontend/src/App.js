@@ -63,8 +63,15 @@ function App() {
       return;
     }
 
+    const now = new Date();
     const start = new Date(startDate);
     const end = new Date(endDate);
+
+    if (start < now || end < now || end < start) {
+      alert('Les dates sont invalides. Veuillez vérifier votre sélection.');
+      return;
+    }
+
     const days = Math.max(1, Math.ceil((end - start) / (1000 * 60 * 60 * 24)));
     const price = days * selectedCar.price_per_day;
 
@@ -120,7 +127,7 @@ function App() {
       registerData.username,
       registerData.email,
       registerData.password,
-      'user' // ✅ rôle forcé ici
+      'user' // rôle fixé
     );
     if (result?.user) {
       alert('Inscription réussie');
@@ -196,39 +203,11 @@ function App() {
           <div className="bg-white p-6 rounded w-96">
             <h2 className="text-xl mb-4">Inscription</h2>
             <form onSubmit={handleRegisterSubmit}>
-              <input
-                type="text"
-                name="username"
-                placeholder="Nom d'utilisateur"
-                value={registerData.username}
-                onChange={handleRegisterChange}
-                className="border p-2 mb-2 w-full"
-                required
-              />
-              <input
-                type="email"
-                name="email"
-                placeholder="Email"
-                value={registerData.email}
-                onChange={handleRegisterChange}
-                className="border p-2 mb-2 w-full"
-                required
-              />
-              <input
-                type="password"
-                name="password"
-                placeholder="Mot de passe"
-                value={registerData.password}
-                onChange={handleRegisterChange}
-                className="border p-2 mb-2 w-full"
-                required
-              />
-              <button type="submit" className="bg-green-500 text-white p-2 w-full mt-2 rounded">
-                S'inscrire
-              </button>
-              <button onClick={() => setShowSignup(false)} type="button" className="bg-red-500 text-white p-2 w-full mt-2 rounded">
-                Annuler
-              </button>
+              <input type="text" name="username" placeholder="Nom d'utilisateur" value={registerData.username} onChange={handleRegisterChange} className="border p-2 mb-2 w-full" required />
+              <input type="email" name="email" placeholder="Email" value={registerData.email} onChange={handleRegisterChange} className="border p-2 mb-2 w-full" required />
+              <input type="password" name="password" placeholder="Mot de passe" value={registerData.password} onChange={handleRegisterChange} className="border p-2 mb-2 w-full" required />
+              <button type="submit" className="bg-green-500 text-white p-2 w-full mt-2 rounded">S'inscrire</button>
+              <button onClick={() => setShowSignup(false)} type="button" className="bg-red-500 text-white p-2 w-full mt-2 rounded">Annuler</button>
             </form>
           </div>
         </div>
@@ -238,27 +217,11 @@ function App() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
           <div className="bg-white p-6 rounded w-96">
             <h2 className="text-xl mb-4">Connexion</h2>
-            <input
-              type="email"
-              placeholder="Email"
-              value={loginEmail}
-              onChange={(e) => setLoginEmail(e.target.value)}
-              className="border p-2 mb-2 w-full"
-            />
-            <input
-              type="password"
-              placeholder="Mot de passe"
-              value={loginPassword}
-              onChange={(e) => setLoginPassword(e.target.value)}
-              className="border p-2 mb-2 w-full"
-            />
+            <input type="email" placeholder="Email" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} className="border p-2 mb-2 w-full" />
+            <input type="password" placeholder="Mot de passe" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} className="border p-2 mb-2 w-full" />
             {loginError && <p className="text-red-500">{loginError}</p>}
-            <button onClick={handleLoginSubmit} className="bg-blue-500 text-white p-2 w-full mt-2 rounded">
-              Se connecter
-            </button>
-            <button onClick={() => setShowLogin(false)} className="bg-red-500 text-white p-2 w-full mt-2 rounded">
-              Annuler
-            </button>
+            <button onClick={handleLoginSubmit} className="bg-blue-500 text-white p-2 w-full mt-2 rounded">Se connecter</button>
+            <button onClick={() => setShowLogin(false)} className="bg-red-500 text-white p-2 w-full mt-2 rounded">Annuler</button>
           </div>
         </div>
       )}

@@ -9,7 +9,7 @@ const router = express.Router();
 router.get('/', async (req, res) => {
   try {
     const reservations = await Reservation.findAll({
-      include: [{ model: Car }]
+      include: [{ model: Car }],
     });
     res.json(reservations);
   } catch (error) {
@@ -18,39 +18,50 @@ router.get('/', async (req, res) => {
   }
 });
 
-// 📌 Créer une nouvelle réservation
+// 📌 Créer une nouvelle réservation avec vérification des dates
 router.post('/', async (req, res) => {
   const { user_name, car_id, start_date, end_date, total_price } = req.body;
 
   try {
+    const today = new Date();
+    const start = new Date(start_date);
+    const end = new Date(end_date);
+
+    // ❌ Vérifie si la date de début ou fin est passée ou invalide
+    if (start < today || end < today || end < start) {
+      return res.status(400).json({ error: 'Dates invalides. Impossible de réserver dans le passé.' });
+    }
+
+    // 🔍 Vérifie s'il existe déjà une réservation chevauchante pour cette voiture
     const existingReservation = await Reservation.findOne({
       where: {
         car_id,
         [Op.or]: [
           {
-            start_date: { [Op.between]: [start_date, end_date] }
+            start_date: { [Op.between]: [start_date, end_date] },
           },
           {
-            end_date: { [Op.between]: [start_date, end_date] }
+            end_date: { [Op.between]: [start_date, end_date] },
           },
           {
             start_date: { [Op.lte]: start_date },
-            end_date: { [Op.gte]: end_date }
-          }
-        ]
-      }
+            end_date: { [Op.gte]: end_date },
+          },
+        ],
+      },
     });
 
     if (existingReservation) {
       return res.status(400).json({ error: 'Cette voiture est déjà réservée à ces dates.' });
     }
 
+    // ✅ Crée la réservation
     const reservation = await Reservation.create({
       user_name,
       car_id,
       start_date,
       end_date,
-      total_price
+      total_price,
     });
 
     res.status(201).json(reservation);
@@ -67,7 +78,7 @@ router.get('/user/:username', async (req, res) => {
   try {
     const reservations = await Reservation.findAll({
       where: { user_name: username },
-      include: [{ model: Car }]
+      include: [{ model: Car }],
     });
     res.json(reservations);
   } catch (error) {
