@@ -26,7 +26,6 @@ function App() {
     const stored = localStorage.getItem('user');
     return stored ? JSON.parse(stored) : null;
   });
-  
 
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
@@ -72,7 +71,13 @@ function App() {
 
     setTotalPrice(price);
 
-    const reservation = await createReservation(loggedInUser, selectedCar.id, startDate, endDate, price);
+    const reservation = await createReservation(
+      loggedInUser.username, // ✅ correction ici
+      selectedCar.id,
+      startDate,
+      endDate,
+      price
+    );
 
     if (reservation?.error) {
       alert(reservation.error);
@@ -187,7 +192,6 @@ function App() {
         </div>
       )}
 
-      {/* ✅ Modal d'inscription */}
       {showSignup && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
           <div className="bg-white p-6 rounded w-96">
@@ -220,6 +224,15 @@ function App() {
                 className="border p-2 mb-2 w-full"
                 required
               />
+              <select
+                name="role"
+                value={registerData.role}
+                onChange={handleRegisterChange}
+                className="border p-2 mb-2 w-full"
+              >
+                <option value="user">Utilisateur</option>
+                <option value="admin">Administrateur</option>
+              </select>
               <button type="submit" className="bg-green-500 text-white p-2 w-full mt-2 rounded">
                 S'inscrire
               </button>
@@ -231,7 +244,6 @@ function App() {
         </div>
       )}
 
-      {/* ✅ Modal de connexion */}
       {showLogin && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
           <div className="bg-white p-6 rounded w-96">

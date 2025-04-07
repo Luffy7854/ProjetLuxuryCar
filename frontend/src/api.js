@@ -2,14 +2,13 @@ import axios from 'axios';
 
 const API_URL = 'http://localhost:5000/api';
 
-// ✅ Envoi du rôle aussi
 export const registerUser = async (username, email, password, role = 'user') => {
   try {
     const response = await axios.post(`${API_URL}/users/register`, {
       username,
       email,
       password,
-      role, // 🔥 C'est ça qui manquait !
+      role,
     });
     return response.data;
   } catch (error) {
@@ -31,8 +30,7 @@ export const loginUser = async (email, password) => {
 export const getCars = async (brand = '') => {
   try {
     const response = await axios.get(`${API_URL}/cars?brand=${brand}`);
-    console.log('Réponse API pour les voitures:', response); // Log la réponse complète
-    return response.data; // Renvoie seulement les données JSON
+    return response.data;
   } catch (error) {
     console.error('Erreur chargement voitures:', error);
     return [];
@@ -49,11 +47,10 @@ export const getReservations = async () => {
   }
 };
 
-// ✅ Modifié : retourne aussi l'erreur serveur
-export const createReservation = async (userName, carId, startDate, endDate, totalPrice) => {
+export const createReservation = async (username, carId, startDate, endDate, totalPrice) => {
   try {
     const response = await axios.post(`${API_URL}/reservations`, {
-      user_name: userName,
+      user_name: username, // ✅ correction ici
       car_id: carId,
       start_date: startDate,
       end_date: endDate,
