@@ -1,4 +1,8 @@
 import { useEffect, useState } from 'react';
+import Header from './Header';
+import CarCarousel from './CarCarousel';
+import BrandFilter from './BrandFilter'; // Import du nouveau composant
+
 import {
   getCars,
   getReservations,
@@ -164,40 +168,21 @@ function App() {
     setShowAdminPanel(false);
   };
 
+  // Gestionnaire pour le changement de filtre de marque
+  const handleBrandFilterChange = (selectedBrand) => {
+    setBrand(selectedBrand);
+  };
+
   return (
     <div className="relative">
-      <header className="flex justify-between p-4 items-center">
-        <h1 className="text-2xl font-bold text-red-500">🚗 Location de voitures 🚀</h1>
-        <div className="flex items-center gap-4">
-          {loggedInUser ? (
-            <>
-              <span className="text-gray-800 font-semibold">
-                👋 Bonjour, {loggedInUser.username} ({loggedInUser.role})
-              </span>
-              {loggedInUser.role === 'admin' && (
-                <button
-                  className="bg-yellow-500 text-white px-3 py-2 rounded"
-                  onClick={() => setShowAdminPanel(!showAdminPanel)}
-                >
-                  {showAdminPanel ? 'Fermer Gérer' : 'Gérer'}
-                </button>
-              )}
-              <button className="bg-gray-700 text-white px-3 py-2 rounded" onClick={handleLogout}>
-                Déconnexion
-              </button>
-            </>
-          ) : (
-            <>
-              <button className="bg-blue-500 text-white px-4 py-2 rounded" onClick={() => setShowLogin(true)}>
-                Se connecter
-              </button>
-              <button className="bg-green-500 text-white px-4 py-2 rounded" onClick={() => setShowSignup(true)}>
-                S'inscrire
-              </button>
-            </>
-          )}
-        </div>
-      </header>
+      <Header 
+        loggedInUser={loggedInUser}
+        setShowLogin={setShowLogin}
+        setShowSignup={setShowSignup}
+        handleLogout={handleLogout}
+        showAdminPanel={showAdminPanel}
+        setShowAdminPanel={setShowAdminPanel}
+      />
 
       {showAdminPanel && loggedInUser?.role === 'admin' && (
         <div className="p-4 bg-gray-100 rounded shadow-md">
@@ -205,63 +190,171 @@ function App() {
         </div>
       )}
 
+      {/* Composant de filtrage par marque */}
+      <BrandFilter onFilterChange={handleBrandFilterChange} />
+
+      {/* Carrousel des voitures */}
+      <CarCarousel cars={cars} setSelectedCar={setSelectedCar} />
+
+      {/* Modal de réservation */}
+      {selectedCar && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50">
+          <div className="bg-white p-8 rounded-lg w-96 shadow-2xl transform transition-all animate-fadeIn">
+            <div className="flex justify-between items-center mb-6 border-b pb-3">
+              <h2 className="text-2xl font-bold text-gray-800">Réserver {selectedCar.name}</h2>
+              <span className="text-sm bg-red-600 text-white px-2 py-1 rounded">
+                {selectedCar.price_per_day}€/jour
+              </span>
+            </div>
+            
+            <div className="mb-4">
+              <img 
+                src={selectedCar.imageUrl} 
+                alt={selectedCar.name} 
+                className="w-full h-40 object-cover rounded mb-4" 
+              />
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-gray-700 text-sm font-bold mb-2">Date de début</label>
+                <input 
+                  type="date" 
+                  value={startDate} 
+                  onChange={(e) => setStartDate(e.target.value)} 
+                  className="border border-gray-300 p-3 rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                />
+              </div>
+              <div>
+                <label className="block text-gray-700 text-sm font-bold mb-2">Date de fin</label>
+                <input 
+                  type="date" 
+                  value={endDate} 
+                  onChange={(e) => setEndDate(e.target.value)} 
+                  className="border border-gray-300 p-3 rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                />
+              </div>
+              
+              <button 
+                onClick={handleReserve} 
+                className="bg-green-600 hover:bg-green-700 text-white font-bold p-3 w-full rounded-lg transition duration-300 shadow-md flex items-center justify-center gap-2"
+              >
+                <span>📅 Confirmer la réservation</span>
+              </button>
+              <button 
+                onClick={() => setSelectedCar(null)} 
+                className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold p-3 w-full rounded-lg transition duration-300"
+              >
+                Annuler
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showSignup && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <div className="bg-white p-6 rounded w-96">
-            <h2 className="text-xl mb-4">Inscription</h2>
-            <form onSubmit={handleRegisterSubmit}>
-              <input type="text" name="username" placeholder="Nom d'utilisateur" value={registerData.username} onChange={handleRegisterChange} className="border p-2 mb-2 w-full" required />
-              <input type="email" name="email" placeholder="Email" value={registerData.email} onChange={handleRegisterChange} className="border p-2 mb-2 w-full" required />
-              <input type="password" name="password" placeholder="Mot de passe" value={registerData.password} onChange={handleRegisterChange} className="border p-2 mb-2 w-full" required />
-              <button type="submit" className="bg-green-500 text-white p-2 w-full mt-2 rounded">S'inscrire</button>
-              <button onClick={() => setShowSignup(false)} type="button" className="bg-red-500 text-white p-2 w-full mt-2 rounded">Annuler</button>
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50">
+          <div className="bg-white p-8 rounded-lg w-96 shadow-2xl transform transition-all animate-fadeIn">
+            <h2 className="text-2xl font-bold mb-6 text-gray-800 border-b pb-2">Inscription</h2>
+            <form onSubmit={handleRegisterSubmit} className="space-y-4">
+              <div>
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="username">Nom d'utilisateur</label>
+                <input 
+                  id="username"
+                  type="text" 
+                  name="username" 
+                  placeholder="Votre nom d'utilisateur" 
+                  value={registerData.username} 
+                  onChange={handleRegisterChange} 
+                  className="border border-gray-300 p-3 rounded w-full focus:outline-none focus:ring-2 focus:ring-green-500" 
+                  required 
+                />
+              </div>
+              <div>
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="regemail">Email</label>
+                <input 
+                  id="regemail"
+                  type="email" 
+                  name="email" 
+                  placeholder="Votre email" 
+                  value={registerData.email} 
+                  onChange={handleRegisterChange} 
+                  className="border border-gray-300 p-3 rounded w-full focus:outline-none focus:ring-2 focus:ring-green-500" 
+                  required 
+                />
+              </div>
+              <div>
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="regpassword">Mot de passe</label>
+                <input 
+                  id="regpassword"
+                  type="password" 
+                  name="password" 
+                  placeholder="Votre mot de passe" 
+                  value={registerData.password} 
+                  onChange={handleRegisterChange} 
+                  className="border border-gray-300 p-3 rounded w-full focus:outline-none focus:ring-2 focus:ring-green-500" 
+                  required 
+                />
+              </div>
+              <button 
+                type="submit" 
+                className="bg-green-600 hover:bg-green-700 text-white font-bold p-3 w-full rounded-lg transition duration-300 shadow-md"
+              >
+                S'inscrire
+              </button>
+              <button 
+                onClick={() => setShowSignup(false)} 
+                type="button" 
+                className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold p-3 w-full rounded-lg transition duration-300"
+              >
+                Annuler
+              </button>
             </form>
           </div>
         </div>
       )}
 
       {showLogin && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <div className="bg-white p-6 rounded w-96">
-            <h2 className="text-xl mb-4">Connexion</h2>
-            <input type="email" placeholder="Email" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} className="border p-2 mb-2 w-full" />
-            <input type="password" placeholder="Mot de passe" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} className="border p-2 mb-2 w-full" />
-            {loginError && <p className="text-red-500">{loginError}</p>}
-            <button onClick={handleLoginSubmit} className="bg-blue-500 text-white p-2 w-full mt-2 rounded">Se connecter</button>
-            <button onClick={() => setShowLogin(false)} className="bg-red-500 text-white p-2 w-full mt-2 rounded">Annuler</button>
-          </div>
-        </div>
-      )}
-
-      {/* Liste des voitures */}
-      <div className="flex flex-wrap p-4 gap-4">
-        {cars.map((car) => (
-          <div key={car.id} className="border p-4 w-64">
-            <img src={car.imageUrl} alt={car.name} className="w-full" />
-            <h3 className="font-bold">{car.name}</h3>
-            <p>Marque : {car.brand}</p>
-            <p>Vitesse max : {car.max_speed} km/h</p>
-            <p>Type : {car.type}</p>
-            <p>Prix : {car.price_per_day} € / jour</p>
-            <button
-              onClick={() => setSelectedCar(car)}
-              className="bg-blue-500 text-white p-2 rounded w-full mt-2"
-            >
-              📅 Réserver
-            </button>
-          </div>
-        ))}
-      </div>
-
-      {/* Modal de réservation */}
-      {selectedCar && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <div className="bg-white p-6 rounded w-96">
-            <h2 className="text-xl font-bold mb-4">Réserver {selectedCar.name}</h2>
-            <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="border p-2 mb-2 w-full" />
-            <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="border p-2 mb-2 w-full" />
-            <button onClick={handleReserve} className="bg-green-500 text-white p-2 rounded w-full mt-2">Confirmer la réservation</button>
-            <button onClick={() => setSelectedCar(null)} className="bg-red-500 text-white p-2 rounded w-full mt-2">Annuler</button>
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50">
+          <div className="bg-white p-8 rounded-lg w-96 shadow-2xl transform transition-all animate-fadeIn">
+            <h2 className="text-2xl font-bold mb-6 text-gray-800 border-b pb-2">Connexion</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="email">Email</label>
+                <input 
+                  id="email"
+                  type="email" 
+                  placeholder="Votre email" 
+                  value={loginEmail} 
+                  onChange={(e) => setLoginEmail(e.target.value)} 
+                  className="border border-gray-300 p-3 rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                />
+              </div>
+              <div>
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="password">Mot de passe</label>
+                <input 
+                  id="password"
+                  type="password" 
+                  placeholder="Votre mot de passe" 
+                  value={loginPassword} 
+                  onChange={(e) => setLoginPassword(e.target.value)} 
+                  className="border border-gray-300 p-3 rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                />
+              </div>
+              {loginError && <p className="text-red-500 text-sm">{loginError}</p>}
+              <button 
+                onClick={handleLoginSubmit} 
+                className="bg-blue-600 hover:bg-blue-700 text-white font-bold p-3 w-full rounded-lg transition duration-300 shadow-md"
+              >
+                Se connecter
+              </button>
+              <button 
+                onClick={() => setShowLogin(false)} 
+                className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold p-3 w-full rounded-lg transition duration-300"
+              >
+                Annuler
+              </button>
+            </div>
           </div>
         </div>
       )}

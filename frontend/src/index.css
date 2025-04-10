@@ -1,3 +1,157 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Définition des keyframes pour les animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulseGlow {
+  0% { box-shadow: 0 0 0 0 rgba(230, 57, 70, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(230, 57, 70, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(230, 57, 70, 0); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Animation pour les modales */
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Effet de zoom sur le logo */
+.logo {
+  transition: transform 0.3s ease-in-out;
+}
+
+.logo:hover {
+  transform: scale(1.1);
+}
+
+/* Animation sur "Location de luxe à Paris" */
+.location-text {
+  transition: color 0.3s ease-in-out;
+}
+
+.location-text:hover {
+  color: #e63946; /* Rouge élégant */
+  cursor: pointer;
+}
+
+/* Effet sur les boutons */
+.button-hover {
+  transition: all 0.3s ease-in-out;
+  position: relative;
+  overflow: hidden;
+}
+
+.button-hover:before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transition: all 0.6s;
+  z-index: 1;
+}
+
+.button-hover:hover:before {
+  left: 100%;
+}
+
+.button-hover:hover {
+  background-color: #e63946 !important;
+  color: white !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(230, 57, 70, 0.5);
+}
+
+/* Animation sur les icônes des réseaux sociaux */
+.social-icon {
+  transition: transform 0.3s ease-in-out;
+}
+
+.social-icon:hover {
+  transform: scale(1.2);
+  animation: pulseGlow 1.5s infinite;
+}
+
+/* Effet sur les flèches du carrousel */
+.swiper-button {
+  transition: all 0.3s ease-in-out;
+}
+
+.swiper-button:hover {
+  transform: scale(1.2);
+  color: #e63946;
+}
+
+/* Style du Swiper */
+.swiper-pagination-bullet-active {
+  background-color: #e63946 !important;
+}
+
+.swiper-button-next:after,
+.swiper-button-prev:after {
+  display: none;
+}
+
+/* Style pour les cartes de voitures */
+.swiper-slide {
+  margin-right: 0 !important;
+  padding-right: 0 !important;
+  opacity: 0.8;
+  transition: all 0.4s ease;
+}
+
+.swiper-slide-active {
+  opacity: 1;
+  transform: scale(1.05);
+}
+
+/* Effet de brillance pour les prix */
+.text-red-600 {
+  background: linear-gradient(90deg, #e63946, #ff8c94, #e63946);
+  background-size: 200% auto;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  animation: shimmer 4s infinite linear;
+  display: inline-block;
+}
+
+/* Évite que Swiper ajoute un padding supplémentaire */
+.swiper-wrapper {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+/* Personnalisation de la barre de défilement */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #e63946;
+}
