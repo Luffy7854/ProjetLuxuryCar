@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import Header from './Header';
 import CarCarousel from './CarCarousel';
-import BrandFilter from './BrandFilter'; // Import du nouveau composant
-
+import BrandFilter from './BrandFilter';
+import TrackCarousel from './TrackCarousel'; // ✅ Ajouté pour les circuits
 import {
   getCars,
   getReservations,
@@ -10,11 +10,13 @@ import {
   registerUser,
   loginUser,
   getUserReservations,
+  getTracks, // ✅ Ajouté pour charger les circuits
 } from './api';
 import AdminPanel from './AdminPanel';
 
 function App() {
   const [cars, setCars] = useState([]);
+  const [tracks, setTracks] = useState([]); // ✅ circuits
   const [reservations, setReservations] = useState([]);
   const [userReservations, setUserReservations] = useState([]);
   const [brand, setBrand] = useState('');
@@ -43,10 +45,10 @@ function App() {
 
   useEffect(() => {
     fetchCars();
+    fetchTracks(); // ✅ Ajouté
     fetchReservations();
   }, [brand]);
 
-  // ✅ Ajout : mise à jour des statuts des réservations utilisateur si connecté
   useEffect(() => {
     if (loggedInUser) {
       fetchUserReservations(loggedInUser.username);
@@ -56,6 +58,11 @@ function App() {
   const fetchCars = async () => {
     const data = await getCars(brand);
     setCars(data);
+  };
+
+  const fetchTracks = async () => {
+    const data = await getTracks(); // ✅ Ajouté
+    setTracks(data);
   };
 
   const fetchReservations = async () => {
@@ -168,14 +175,13 @@ function App() {
     setShowAdminPanel(false);
   };
 
-  // Gestionnaire pour le changement de filtre de marque
   const handleBrandFilterChange = (selectedBrand) => {
     setBrand(selectedBrand);
   };
 
   return (
     <div className="relative">
-      <Header 
+      <Header
         loggedInUser={loggedInUser}
         setShowLogin={setShowLogin}
         setShowSignup={setShowSignup}
@@ -190,13 +196,12 @@ function App() {
         </div>
       )}
 
-      {/* Composant de filtrage par marque */}
       <BrandFilter onFilterChange={handleBrandFilterChange} />
 
-      {/* Carrousel des voitures */}
       <CarCarousel cars={cars} setSelectedCar={setSelectedCar} />
 
-      {/* Modal de réservation */}
+      <TrackCarousel circuits={tracks} /> {/* ✅ Ajout du carrousel circuits */}
+
       {selectedCar && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50">
           <div className="bg-white p-8 rounded-lg w-96 shadow-2xl transform transition-all animate-fadeIn">
@@ -206,43 +211,43 @@ function App() {
                 {selectedCar.price_per_day}€/jour
               </span>
             </div>
-            
+
             <div className="mb-4">
-              <img 
-                src={selectedCar.imageUrl} 
-                alt={selectedCar.name} 
-                className="w-full h-40 object-cover rounded mb-4" 
+              <img
+                src={selectedCar.imageUrl}
+                alt={selectedCar.name}
+                className="w-full h-40 object-cover rounded mb-4"
               />
             </div>
-            
+
             <div className="space-y-4">
               <div>
                 <label className="block text-gray-700 text-sm font-bold mb-2">Date de début</label>
-                <input 
-                  type="date" 
-                  value={startDate} 
-                  onChange={(e) => setStartDate(e.target.value)} 
-                  className="border border-gray-300 p-3 rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="border border-gray-300 p-3 rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               <div>
                 <label className="block text-gray-700 text-sm font-bold mb-2">Date de fin</label>
-                <input 
-                  type="date" 
-                  value={endDate} 
-                  onChange={(e) => setEndDate(e.target.value)} 
-                  className="border border-gray-300 p-3 rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="border border-gray-300 p-3 rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
-              
-              <button 
-                onClick={handleReserve} 
+
+              <button
+                onClick={handleReserve}
                 className="bg-green-600 hover:bg-green-700 text-white font-bold p-3 w-full rounded-lg transition duration-300 shadow-md flex items-center justify-center gap-2"
               >
                 <span>📅 Confirmer la réservation</span>
               </button>
-              <button 
-                onClick={() => setSelectedCar(null)} 
+              <button
+                onClick={() => setSelectedCar(null)}
                 className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold p-3 w-full rounded-lg transition duration-300"
               >
                 Annuler
@@ -254,58 +259,43 @@ function App() {
 
       {showSignup && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50">
-          <div className="bg-white p-8 rounded-lg w-96 shadow-2xl transform transition-all animate-fadeIn">
+          <div className="bg-white p-8 rounded-lg w-96 shadow-2xl">
             <h2 className="text-2xl font-bold mb-6 text-gray-800 border-b pb-2">Inscription</h2>
             <form onSubmit={handleRegisterSubmit} className="space-y-4">
-              <div>
-                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="username">Nom d'utilisateur</label>
-                <input 
-                  id="username"
-                  type="text" 
-                  name="username" 
-                  placeholder="Votre nom d'utilisateur" 
-                  value={registerData.username} 
-                  onChange={handleRegisterChange} 
-                  className="border border-gray-300 p-3 rounded w-full focus:outline-none focus:ring-2 focus:ring-green-500" 
-                  required 
-                />
-              </div>
-              <div>
-                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="regemail">Email</label>
-                <input 
-                  id="regemail"
-                  type="email" 
-                  name="email" 
-                  placeholder="Votre email" 
-                  value={registerData.email} 
-                  onChange={handleRegisterChange} 
-                  className="border border-gray-300 p-3 rounded w-full focus:outline-none focus:ring-2 focus:ring-green-500" 
-                  required 
-                />
-              </div>
-              <div>
-                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="regpassword">Mot de passe</label>
-                <input 
-                  id="regpassword"
-                  type="password" 
-                  name="password" 
-                  placeholder="Votre mot de passe" 
-                  value={registerData.password} 
-                  onChange={handleRegisterChange} 
-                  className="border border-gray-300 p-3 rounded w-full focus:outline-none focus:ring-2 focus:ring-green-500" 
-                  required 
-                />
-              </div>
-              <button 
-                type="submit" 
-                className="bg-green-600 hover:bg-green-700 text-white font-bold p-3 w-full rounded-lg transition duration-300 shadow-md"
-              >
+              <input
+                type="text"
+                name="username"
+                placeholder="Nom d'utilisateur"
+                value={registerData.username}
+                onChange={handleRegisterChange}
+                className="border p-2 mb-2 w-full"
+                required
+              />
+              <input
+                type="email"
+                name="email"
+                placeholder="Email"
+                value={registerData.email}
+                onChange={handleRegisterChange}
+                className="border p-2 mb-2 w-full"
+                required
+              />
+              <input
+                type="password"
+                name="password"
+                placeholder="Mot de passe"
+                value={registerData.password}
+                onChange={handleRegisterChange}
+                className="border p-2 mb-2 w-full"
+                required
+              />
+              <button type="submit" className="bg-green-500 text-white p-2 w-full rounded">
                 S'inscrire
               </button>
-              <button 
-                onClick={() => setShowSignup(false)} 
-                type="button" 
-                className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold p-3 w-full rounded-lg transition duration-300"
+              <button
+                onClick={() => setShowSignup(false)}
+                type="button"
+                className="bg-red-500 text-white p-2 w-full rounded mt-2"
               >
                 Annuler
               </button>
@@ -316,50 +306,39 @@ function App() {
 
       {showLogin && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50">
-          <div className="bg-white p-8 rounded-lg w-96 shadow-2xl transform transition-all animate-fadeIn">
+          <div className="bg-white p-8 rounded-lg w-96 shadow-2xl">
             <h2 className="text-2xl font-bold mb-6 text-gray-800 border-b pb-2">Connexion</h2>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="email">Email</label>
-                <input 
-                  id="email"
-                  type="email" 
-                  placeholder="Votre email" 
-                  value={loginEmail} 
-                  onChange={(e) => setLoginEmail(e.target.value)} 
-                  className="border border-gray-300 p-3 rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-500" 
-                />
-              </div>
-              <div>
-                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="password">Mot de passe</label>
-                <input 
-                  id="password"
-                  type="password" 
-                  placeholder="Votre mot de passe" 
-                  value={loginPassword} 
-                  onChange={(e) => setLoginPassword(e.target.value)} 
-                  className="border border-gray-300 p-3 rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-500" 
-                />
-              </div>
-              {loginError && <p className="text-red-500 text-sm">{loginError}</p>}
-              <button 
-                onClick={handleLoginSubmit} 
-                className="bg-blue-600 hover:bg-blue-700 text-white font-bold p-3 w-full rounded-lg transition duration-300 shadow-md"
-              >
-                Se connecter
-              </button>
-              <button 
-                onClick={() => setShowLogin(false)} 
-                className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold p-3 w-full rounded-lg transition duration-300"
-              >
-                Annuler
-              </button>
-            </div>
+            <input
+              type="email"
+              placeholder="Email"
+              value={loginEmail}
+              onChange={(e) => setLoginEmail(e.target.value)}
+              className="border p-2 mb-2 w-full"
+            />
+            <input
+              type="password"
+              placeholder="Mot de passe"
+              value={loginPassword}
+              onChange={(e) => setLoginPassword(e.target.value)}
+              className="border p-2 mb-2 w-full"
+            />
+            {loginError && <p className="text-red-500">{loginError}</p>}
+            <button
+              onClick={handleLoginSubmit}
+              className="bg-blue-500 text-white p-2 w-full rounded mt-2"
+            >
+              Se connecter
+            </button>
+            <button
+              onClick={() => setShowLogin(false)}
+              className="bg-red-500 text-white p-2 w-full rounded mt-2"
+            >
+              Annuler
+            </button>
           </div>
         </div>
       )}
 
-      {/* Vos réservations */}
       {loggedInUser && userReservations.length > 0 && (
         <div className="p-4">
           <h2 className="text-xl font-bold mb-2">📋 Vos réservations</h2>
