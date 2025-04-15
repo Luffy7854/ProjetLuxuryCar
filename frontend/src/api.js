@@ -47,14 +47,15 @@ export const getReservations = async () => {
   }
 };
 
-export const createReservation = async (username, carId, startDate, endDate, totalPrice) => {
+export const createReservation = async (username, carId, startDate, endDate, totalPrice, city = null) => {
   try {
     const response = await axios.post(`${API_URL}/reservations`, {
-      user_name: username, // ✅ correction ici
+      user_name: username,
       car_id: carId,
       start_date: startDate,
       end_date: endDate,
       total_price: totalPrice,
+      city: city || null
     });
     return response.data;
   } catch (error) {

@@ -5,7 +5,7 @@ const Car = require('../models/Car');
 
 const router = express.Router();
 
-// 📌 Récupérer toutes les réservations avec mise à jour automatique des statuts
+// 📌 Récupérer toutes les réservations
 router.get('/', async (req, res) => {
   try {
     const today = new Date();
@@ -32,9 +32,9 @@ router.get('/', async (req, res) => {
   }
 });
 
-// 📌 Créer une nouvelle réservation avec vérification des dates
+// 📌 Créer une nouvelle réservation
 router.post('/', async (req, res) => {
-  const { user_name, car_id, start_date, end_date, total_price } = req.body;
+  const { user_name, car_id, start_date, end_date, total_price, city } = req.body;
 
   try {
     const today = new Date();
@@ -73,6 +73,7 @@ router.post('/', async (req, res) => {
       start_date,
       end_date,
       total_price,
+      city: city || null
     });
 
     res.status(201).json(reservation);
@@ -82,14 +83,13 @@ router.post('/', async (req, res) => {
   }
 });
 
-// 📌 Récupérer les réservations d’un utilisateur
+// 📌 Récupérer les réservations d’un utilisateur (avec ville)
 router.get('/user/:username', async (req, res) => {
   const { username } = req.params;
 
   try {
     const today = new Date();
 
-    // ✅ Met à jour les statuts expirés pour cet utilisateur
     await Reservation.update(
       { status: 'terminé' },
       {
@@ -104,6 +104,18 @@ router.get('/user/:username', async (req, res) => {
     const reservations = await Reservation.findAll({
       where: { user_name: username },
       include: [{ model: Car }],
+      attributes: [
+        'id',
+        'user_name',
+        'car_id',
+        'start_date',
+        'end_date',
+        'total_price',
+        'status',
+        'city',
+        'createdAt',
+        'updatedAt'
+      ],
     });
 
     res.json(reservations);
@@ -113,7 +125,7 @@ router.get('/user/:username', async (req, res) => {
   }
 });
 
-// ✅ Supprimer une réservation
+// 📌 Supprimer une réservation
 router.delete('/:id', async (req, res) => {
   try {
     const id = req.params.id;

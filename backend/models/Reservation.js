@@ -31,12 +31,15 @@ const Reservation = sequelize.define('Reservation', {
   status: {
     type: DataTypes.ENUM('en cours', 'terminé'),
     defaultValue: 'en cours'
+  },
+  city: {
+    type: DataTypes.STRING, // champ ajouté
+    allowNull: true
   }
 }, {
   timestamps: true
 });
 
-// ✅ Ajoute la relation ici uniquement
 Reservation.belongsTo(Car, { foreignKey: 'car_id' });
 
 module.exports = Reservation;
