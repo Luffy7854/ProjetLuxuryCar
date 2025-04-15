@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import Header from './Header';
 import CarCarousel from './CarCarousel';
-import TrackCarousel from './TrackCarousel';
 import BrandFilter from './BrandFilter';
+import TrackCarouselReservation from './TrackCarouselReservation';
 import AdminPanel from './AdminPanel';
 
 import {
@@ -22,10 +22,11 @@ function App() {
   const [userReservations, setUserReservations] = useState([]);
   const [brand, setBrand] = useState('');
   const [selectedCar, setSelectedCar] = useState(null);
+  const [selectedTrack, setSelectedTrack] = useState(null);
+  const [selectedCircuitCarId, setSelectedCircuitCarId] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [totalPrice, setTotalPrice] = useState(0);
-  const [selectedCity, setSelectedCity] = useState('');
   const [showLogin, setShowLogin] = useState(false);
   const [showSignup, setShowSignup] = useState(false);
   const [showAdminPanel, setShowAdminPanel] = useState(false);
@@ -83,11 +84,6 @@ function App() {
       return;
     }
 
-    if (selectedCar.type === 'route' && !selectedCity) {
-      alert('Veuillez sélectionner une ville.');
-      return;
-    }
-
     const now = new Date();
     const start = new Date(startDate);
     const end = new Date(endDate);
@@ -106,17 +102,15 @@ function App() {
       selectedCar.id,
       startDate,
       endDate,
-      price,
-      selectedCar.type === 'route' ? selectedCity : null
+      price
     );
 
     if (reservation?.error) {
       alert(reservation.error);
-    } else {
-      alert(`Réservation confirmée pour ${loggedInUser.username}`);
+    } else if (reservation) {
+      alert(`Réservation confirmée !`);
       setStartDate('');
       setEndDate('');
-      setSelectedCity('');
       setSelectedCar(null);
       setTotalPrice(0);
       fetchReservations();
@@ -124,20 +118,68 @@ function App() {
     }
   };
 
+  const handleCircuitReservation = async () => {
+    if (!selectedCircuitCarId || !startDate || !endDate || !loggedInUser) {
+      alert('Tous les champs sont requis');
+      return;
+    }
+
+    const selectedCircuitCar = cars.find(
+      (car) => car.id === parseInt(selectedCircuitCarId)
+    );
+    if (!selectedCircuitCar) {
+      alert('Voiture introuvable');
+      return;
+    }
+
+    const now = new Date();
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    if (start < now || end < now || end < start) {
+      alert('Dates invalides');
+      return;
+    }
+
+    const days = Math.max(1, Math.ceil((end - start) / (1000 * 60 * 60 * 24)));
+    const price = days * selectedCircuitCar.price_per_day;
+    setTotalPrice(price);
+
+    const reservation = await createReservation(
+      loggedInUser.username,
+      selectedCircuitCar.id,
+      startDate,
+      endDate,
+      price
+    );
+
+    if (reservation?.error) {
+      alert(reservation.error);
+    } else {
+      alert('Réservation sur circuit confirmée !');
+      setSelectedTrack(null);
+      setStartDate('');
+      setEndDate('');
+      setSelectedCircuitCarId('');
+      fetchReservations();
+      fetchUserReservations(loggedInUser.username);
+    }
+  };
+
   const handleDeleteReservation = async (id) => {
-    if (!window.confirm("Supprimer cette réservation ?")) return;
+    if (!window.confirm('Supprimer cette réservation ?')) return;
     try {
       const res = await fetch(`http://localhost:5000/api/reservations/${id}`, {
         method: 'DELETE',
       });
       if (res.ok) {
-        alert("Réservation supprimée.");
+        alert('Réservation supprimée.');
         fetchUserReservations(loggedInUser.username);
       } else {
-        alert("Erreur suppression");
+        alert('Erreur suppression');
       }
-    } catch (error) {
-      alert("Erreur serveur");
+    } catch {
+      alert('Erreur serveur');
     }
   };
 
@@ -150,7 +192,8 @@ function App() {
     const result = await registerUser(
       registerData.username,
       registerData.email,
-      registerData.password
+      registerData.password,
+      'user'
     );
     if (result?.user) {
       alert('Inscription réussie');
@@ -203,48 +246,139 @@ function App() {
 
       <BrandFilter onFilterChange={handleBrandFilterChange} />
       <CarCarousel cars={cars} setSelectedCar={setSelectedCar} />
-      <TrackCarousel circuits={tracks} />
+      <TrackCarouselReservation tracks={tracks} onTrackClick={setSelectedTrack} />
 
       {selectedCar && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50">
-          <div className="bg-white p-8 rounded-lg w-96 shadow-2xl">
-            <div className="flex justify-between items-center mb-6 border-b pb-3">
-              <h2 className="text-2xl font-bold text-gray-800">Réserver {selectedCar.name}</h2>
-              <span className="text-sm bg-red-600 text-white px-2 py-1 rounded">
-                {selectedCar.price_per_day}€/jour
-              </span>
-            </div>
-
-            <img src={selectedCar.imageUrl} alt={selectedCar.name} className="w-full h-40 object-cover rounded mb-4" />
-
-            <div className="space-y-4">
-              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="border p-3 rounded w-full" />
-              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="border p-3 rounded w-full" />
-              {selectedCar.type === 'route' && (
-                <select value={selectedCity} onChange={(e) => setSelectedCity(e.target.value)} className="border p-3 rounded w-full">
-                  <option value="">Sélectionner une ville</option>
-                  <option value="Paris">Paris</option>
-                  <option value="Cannes">Cannes</option>
-                  <option value="Miami">Miami</option>
-                </select>
-              )}
-              <button onClick={handleReserve} className="bg-green-600 text-white p-3 w-full rounded">📅 Confirmer</button>
-              <button onClick={() => setSelectedCar(null)} className="bg-gray-200 p-3 w-full rounded">Annuler</button>
-            </div>
+          <div className="bg-white p-6 rounded w-96">
+            <h2 className="text-xl font-bold mb-4">Réserver {selectedCar.name}</h2>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="border p-2 mb-2 w-full"
+            />
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="border p-2 mb-2 w-full"
+            />
+            <button
+              onClick={handleReserve}
+              className="bg-green-500 text-white p-2 w-full mt-2 rounded"
+            >
+              Réserver
+            </button>
+            <button
+              onClick={() => setSelectedCar(null)}
+              className="bg-red-500 text-white p-2 w-full mt-2 rounded"
+            >
+              Annuler
+            </button>
           </div>
         </div>
       )}
 
+{selectedTrack && (
+  <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50">
+    <div className="bg-white p-6 rounded w-96 shadow-2xl">
+      <h2 className="text-xl font-bold mb-4 text-center">🏁 Réserver sur {selectedTrack.name}</h2>
+
+      {/* ✅ Image du circuit */}
+      <img
+        src={selectedTrack.imageUrl}
+        alt={selectedTrack.name}
+        className="w-full h-40 object-cover rounded mb-4"
+      />
+
+      {/* ✅ Liste déroulante des voitures de type circuit */}
+      <select
+        value={selectedCircuitCarId}
+        onChange={(e) => setSelectedCircuitCarId(e.target.value)}
+        className="border p-2 mb-2 w-full"
+      >
+        <option value="">Choisir une voiture de type circuit</option>
+        {cars
+          .filter((car) => car.type === 'circuit')
+          .map((car) => (
+            <option key={car.id} value={car.id}>
+              {car.name} - {car.price_per_day}€/jour
+            </option>
+          ))}
+      </select>
+
+      <input
+        type="date"
+        value={startDate}
+        onChange={(e) => setStartDate(e.target.value)}
+        className="border p-2 mb-2 w-full"
+      />
+      <input
+        type="date"
+        value={endDate}
+        onChange={(e) => setEndDate(e.target.value)}
+        className="border p-2 mb-2 w-full"
+      />
+
+      <button
+        onClick={handleCircuitReservation}
+        className="bg-green-500 text-white p-2 w-full mt-2 rounded"
+      >
+        Réserver circuit
+      </button>
+      <button
+        onClick={() => setSelectedTrack(null)}
+        className="bg-red-500 text-white p-2 w-full mt-2 rounded"
+      >
+        Annuler
+      </button>
+    </div>
+  </div>
+)}
+
       {showSignup && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50">
           <div className="bg-white p-8 rounded-lg w-96 shadow-2xl">
-            <h2 className="text-2xl font-bold mb-4">Inscription</h2>
+            <h2 className="text-2xl font-bold mb-6 text-gray-800 border-b pb-2">Inscription</h2>
             <form onSubmit={handleRegisterSubmit} className="space-y-4">
-              <input type="text" name="username" value={registerData.username} onChange={handleRegisterChange} placeholder="Nom d'utilisateur" className="border p-3 rounded w-full" required />
-              <input type="email" name="email" value={registerData.email} onChange={handleRegisterChange} placeholder="Email" className="border p-3 rounded w-full" required />
-              <input type="password" name="password" value={registerData.password} onChange={handleRegisterChange} placeholder="Mot de passe" className="border p-3 rounded w-full" required />
-              <button type="submit" className="bg-green-600 text-white p-3 w-full rounded">S'inscrire</button>
-              <button type="button" onClick={() => setShowSignup(false)} className="bg-gray-200 p-3 w-full rounded">Annuler</button>
+              <input
+                type="text"
+                name="username"
+                placeholder="Nom d'utilisateur"
+                value={registerData.username}
+                onChange={handleRegisterChange}
+                className="border p-2 mb-2 w-full"
+                required
+              />
+              <input
+                type="email"
+                name="email"
+                placeholder="Email"
+                value={registerData.email}
+                onChange={handleRegisterChange}
+                className="border p-2 mb-2 w-full"
+                required
+              />
+              <input
+                type="password"
+                name="password"
+                placeholder="Mot de passe"
+                value={registerData.password}
+                onChange={handleRegisterChange}
+                className="border p-2 mb-2 w-full"
+                required
+              />
+              <button type="submit" className="bg-green-500 text-white p-2 w-full rounded">
+                S'inscrire
+              </button>
+              <button
+                onClick={() => setShowSignup(false)}
+                type="button"
+                className="bg-red-500 text-white p-2 w-full rounded mt-2"
+              >
+                Annuler
+              </button>
             </form>
           </div>
         </div>
@@ -253,14 +387,34 @@ function App() {
       {showLogin && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50">
           <div className="bg-white p-8 rounded-lg w-96 shadow-2xl">
-            <h2 className="text-2xl font-bold mb-4">Connexion</h2>
-            <div className="space-y-4">
-              <input type="email" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} placeholder="Email" className="border p-3 rounded w-full" required />
-              <input type="password" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} placeholder="Mot de passe" className="border p-3 rounded w-full" required />
-              {loginError && <p className="text-red-600">{loginError}</p>}
-              <button onClick={handleLoginSubmit} className="bg-blue-600 text-white p-3 w-full rounded">Se connecter</button>
-              <button onClick={() => setShowLogin(false)} className="bg-gray-200 p-3 w-full rounded">Annuler</button>
-            </div>
+            <h2 className="text-2xl font-bold mb-6 text-gray-800 border-b pb-2">Connexion</h2>
+            <input
+              type="email"
+              placeholder="Email"
+              value={loginEmail}
+              onChange={(e) => setLoginEmail(e.target.value)}
+              className="border p-2 mb-2 w-full"
+            />
+            <input
+              type="password"
+              placeholder="Mot de passe"
+              value={loginPassword}
+              onChange={(e) => setLoginPassword(e.target.value)}
+              className="border p-2 mb-2 w-full"
+            />
+            {loginError && <p className="text-red-500">{loginError}</p>}
+            <button
+              onClick={handleLoginSubmit}
+              className="bg-blue-500 text-white p-2 w-full rounded mt-2"
+            >
+              Se connecter
+            </button>
+            <button
+              onClick={() => setShowLogin(false)}
+              className="bg-red-500 text-white p-2 w-full rounded mt-2"
+            >
+              Annuler
+            </button>
           </div>
         </div>
       )}
@@ -271,12 +425,25 @@ function App() {
           <ul className="space-y-2">
             {userReservations.map((res) => (
               <li key={res.id} className="border p-3 rounded shadow">
-                <p><strong>Voiture :</strong> {res.Car.name}</p>
-                <p><strong>Du</strong> {res.start_date} <strong>au</strong> {res.end_date}</p>
-                <p><strong>Prix total :</strong> {res.total_price} €</p>
-                {res.Car.type === 'route' && res.city && <p><strong>Ville :</strong> {res.city}</p>}
-                <p><strong>Statut :</strong> {res.status}</p>
-                <button onClick={() => handleDeleteReservation(res.id)} className="bg-red-500 text-white px-3 py-1 mt-2 rounded">Supprimer</button>
+                <p>
+                  <strong>Voiture :</strong> {res.Car.name}
+                </p>
+                <p>
+                  <strong>Du</strong> {res.start_date} <strong>au</strong>{' '}
+                  {res.end_date}
+                </p>
+                <p>
+                  <strong>Prix total :</strong> {res.total_price} €
+                </p>
+                <p>
+                  <strong>Statut :</strong> {res.status}
+                </p>
+                <button
+                  onClick={() => handleDeleteReservation(res.id)}
+                  className="bg-red-500 text-white px-3 py-1 mt-2 rounded"
+                >
+                  Supprimer
+                </button>
               </li>
             ))}
           </ul>
