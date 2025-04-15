@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import Header from './Header';
 import CarCarousel from './CarCarousel';
-import BrandFilter from './BrandFilter'; // Import du nouveau composant
+import TrackCarousel from './TrackCarousel';
+import BrandFilter from './BrandFilter';
+import AdminPanel from './AdminPanel';
 
 import {
   getCars,
@@ -10,13 +12,12 @@ import {
   registerUser,
   loginUser,
   getUserReservations,
-  getTracks, // ✅ Ajouté pour charger les circuits
+  getTracks,
 } from './api';
-import AdminPanel from './AdminPanel';
 
 function App() {
   const [cars, setCars] = useState([]);
-  const [tracks, setTracks] = useState([]); // ✅ circuits
+  const [tracks, setTracks] = useState([]);
   const [reservations, setReservations] = useState([]);
   const [userReservations, setUserReservations] = useState([]);
   const [brand, setBrand] = useState('');
@@ -25,7 +26,6 @@ function App() {
   const [endDate, setEndDate] = useState('');
   const [totalPrice, setTotalPrice] = useState(0);
   const [selectedCity, setSelectedCity] = useState('');
-
   const [showLogin, setShowLogin] = useState(false);
   const [showSignup, setShowSignup] = useState(false);
   const [showAdminPanel, setShowAdminPanel] = useState(false);
@@ -47,7 +47,7 @@ function App() {
 
   useEffect(() => {
     fetchCars();
-    fetchTracks(); // ✅ Ajouté
+    fetchTracks();
     fetchReservations();
   }, [brand]);
 
@@ -63,7 +63,7 @@ function App() {
   };
 
   const fetchTracks = async () => {
-    const data = await getTracks(); // ✅ Ajouté
+    const data = await getTracks();
     setTracks(data);
   };
 
@@ -107,7 +107,7 @@ function App() {
       startDate,
       endDate,
       price,
-      selectedCity
+      selectedCar.type === 'route' ? selectedCity : null
     );
 
     if (reservation?.error) {
@@ -150,8 +150,7 @@ function App() {
     const result = await registerUser(
       registerData.username,
       registerData.email,
-      registerData.password,
-      'user'
+      registerData.password
     );
     if (result?.user) {
       alert('Inscription réussie');
@@ -203,11 +202,9 @@ function App() {
       )}
 
       <BrandFilter onFilterChange={handleBrandFilterChange} />
-
-      {/* Carrousel des voitures */}
       <CarCarousel cars={cars} setSelectedCar={setSelectedCar} />
+      <TrackCarousel circuits={tracks} />
 
-      {/* Modal de réservation */}
       {selectedCar && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50">
           <div className="bg-white p-8 rounded-lg w-96 shadow-2xl">
@@ -217,47 +214,22 @@ function App() {
                 {selectedCar.price_per_day}€/jour
               </span>
             </div>
-            
-            <div className="mb-4">
-              <img 
-                src={selectedCar.imageUrl} 
-                alt={selectedCar.name} 
-                className="w-full h-40 object-cover rounded mb-4" 
-              />
-            </div>
-            
+
+            <img src={selectedCar.imageUrl} alt={selectedCar.name} className="w-full h-40 object-cover rounded mb-4" />
+
             <div className="space-y-4">
-              <div>
-                <label className="block text-gray-700 text-sm font-bold mb-2">Date de début</label>
-                <input 
-                  type="date" 
-                  value={startDate} 
-                  onChange={(e) => setStartDate(e.target.value)} 
-                  className="border border-gray-300 p-3 rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-500" 
-                />
-              </div>
-              <div>
-                <label className="block text-gray-700 text-sm font-bold mb-2">Date de fin</label>
-                <input 
-                  type="date" 
-                  value={endDate} 
-                  onChange={(e) => setEndDate(e.target.value)} 
-                  className="border border-gray-300 p-3 rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-500" 
-                />
-              </div>
-              
-              <button 
-                onClick={handleReserve} 
-                className="bg-green-600 hover:bg-green-700 text-white font-bold p-3 w-full rounded-lg transition duration-300 shadow-md flex items-center justify-center gap-2"
-              >
-                <span>📅 Confirmer la réservation</span>
-              </button>
-              <button 
-                onClick={() => setSelectedCar(null)} 
-                className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold p-3 w-full rounded-lg transition duration-300"
-              >
-                Annuler
-              </button>
+              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="border p-3 rounded w-full" />
+              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="border p-3 rounded w-full" />
+              {selectedCar.type === 'route' && (
+                <select value={selectedCity} onChange={(e) => setSelectedCity(e.target.value)} className="border p-3 rounded w-full">
+                  <option value="">Sélectionner une ville</option>
+                  <option value="Paris">Paris</option>
+                  <option value="Cannes">Cannes</option>
+                  <option value="Miami">Miami</option>
+                </select>
+              )}
+              <button onClick={handleReserve} className="bg-green-600 text-white p-3 w-full rounded">📅 Confirmer</button>
+              <button onClick={() => setSelectedCar(null)} className="bg-gray-200 p-3 w-full rounded">Annuler</button>
             </div>
           </div>
         </div>
@@ -266,60 +238,13 @@ function App() {
       {showSignup && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50">
           <div className="bg-white p-8 rounded-lg w-96 shadow-2xl">
-            <h2 className="text-2xl font-bold mb-6 text-gray-800 border-b pb-2">Inscription</h2>
+            <h2 className="text-2xl font-bold mb-4">Inscription</h2>
             <form onSubmit={handleRegisterSubmit} className="space-y-4">
-              <div>
-                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="username">Nom d'utilisateur</label>
-                <input 
-                  id="username"
-                  type="text" 
-                  name="username" 
-                  placeholder="Votre nom d'utilisateur" 
-                  value={registerData.username} 
-                  onChange={handleRegisterChange} 
-                  className="border border-gray-300 p-3 rounded w-full focus:outline-none focus:ring-2 focus:ring-green-500" 
-                  required 
-                />
-              </div>
-              <div>
-                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="regemail">Email</label>
-                <input 
-                  id="regemail"
-                  type="email" 
-                  name="email" 
-                  placeholder="Votre email" 
-                  value={registerData.email} 
-                  onChange={handleRegisterChange} 
-                  className="border border-gray-300 p-3 rounded w-full focus:outline-none focus:ring-2 focus:ring-green-500" 
-                  required 
-                />
-              </div>
-              <div>
-                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="regpassword">Mot de passe</label>
-                <input 
-                  id="regpassword"
-                  type="password" 
-                  name="password" 
-                  placeholder="Votre mot de passe" 
-                  value={registerData.password} 
-                  onChange={handleRegisterChange} 
-                  className="border border-gray-300 p-3 rounded w-full focus:outline-none focus:ring-2 focus:ring-green-500" 
-                  required 
-                />
-              </div>
-              <button 
-                type="submit" 
-                className="bg-green-600 hover:bg-green-700 text-white font-bold p-3 w-full rounded-lg transition duration-300 shadow-md"
-              >
-                S'inscrire
-              </button>
-              <button 
-                onClick={() => setShowSignup(false)} 
-                type="button" 
-                className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold p-3 w-full rounded-lg transition duration-300"
-              >
-                Annuler
-              </button>
+              <input type="text" name="username" value={registerData.username} onChange={handleRegisterChange} placeholder="Nom d'utilisateur" className="border p-3 rounded w-full" required />
+              <input type="email" name="email" value={registerData.email} onChange={handleRegisterChange} placeholder="Email" className="border p-3 rounded w-full" required />
+              <input type="password" name="password" value={registerData.password} onChange={handleRegisterChange} placeholder="Mot de passe" className="border p-3 rounded w-full" required />
+              <button type="submit" className="bg-green-600 text-white p-3 w-full rounded">S'inscrire</button>
+              <button type="button" onClick={() => setShowSignup(false)} className="bg-gray-200 p-3 w-full rounded">Annuler</button>
             </form>
           </div>
         </div>
@@ -327,50 +252,19 @@ function App() {
 
       {showLogin && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50">
-          <div className="bg-white p-8 rounded-lg w-96 shadow-2xl transform transition-all animate-fadeIn">
-            <h2 className="text-2xl font-bold mb-6 text-gray-800 border-b pb-2">Connexion</h2>
+          <div className="bg-white p-8 rounded-lg w-96 shadow-2xl">
+            <h2 className="text-2xl font-bold mb-4">Connexion</h2>
             <div className="space-y-4">
-              <div>
-                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="email">Email</label>
-                <input 
-                  id="email"
-                  type="email" 
-                  placeholder="Votre email" 
-                  value={loginEmail} 
-                  onChange={(e) => setLoginEmail(e.target.value)} 
-                  className="border border-gray-300 p-3 rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-500" 
-                />
-              </div>
-              <div>
-                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="password">Mot de passe</label>
-                <input 
-                  id="password"
-                  type="password" 
-                  placeholder="Votre mot de passe" 
-                  value={loginPassword} 
-                  onChange={(e) => setLoginPassword(e.target.value)} 
-                  className="border border-gray-300 p-3 rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-500" 
-                />
-              </div>
-              {loginError && <p className="text-red-500 text-sm">{loginError}</p>}
-              <button 
-                onClick={handleLoginSubmit} 
-                className="bg-blue-600 hover:bg-blue-700 text-white font-bold p-3 w-full rounded-lg transition duration-300 shadow-md"
-              >
-                Se connecter
-              </button>
-              <button 
-                onClick={() => setShowLogin(false)} 
-                className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold p-3 w-full rounded-lg transition duration-300"
-              >
-                Annuler
-              </button>
+              <input type="email" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} placeholder="Email" className="border p-3 rounded w-full" required />
+              <input type="password" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} placeholder="Mot de passe" className="border p-3 rounded w-full" required />
+              {loginError && <p className="text-red-600">{loginError}</p>}
+              <button onClick={handleLoginSubmit} className="bg-blue-600 text-white p-3 w-full rounded">Se connecter</button>
+              <button onClick={() => setShowLogin(false)} className="bg-gray-200 p-3 w-full rounded">Annuler</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Vos réservations */}
       {loggedInUser && userReservations.length > 0 && (
         <div className="p-4">
           <h2 className="text-xl font-bold mb-2">📋 Vos réservations</h2>
@@ -380,9 +274,7 @@ function App() {
                 <p><strong>Voiture :</strong> {res.Car.name}</p>
                 <p><strong>Du</strong> {res.start_date} <strong>au</strong> {res.end_date}</p>
                 <p><strong>Prix total :</strong> {res.total_price} €</p>
-                {res.Car.type === 'route' && res.city && (
-                  <p><strong>Ville :</strong> {res.city}</p>
-                )}
+                {res.Car.type === 'route' && res.city && <p><strong>Ville :</strong> {res.city}</p>}
                 <p><strong>Statut :</strong> {res.status}</p>
                 <button onClick={() => handleDeleteReservation(res.id)} className="bg-red-500 text-white px-3 py-1 mt-2 rounded">Supprimer</button>
               </li>
