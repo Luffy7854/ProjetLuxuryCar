@@ -87,7 +87,7 @@ function TrackCarouselReservation({
         </Swiper>
       </div>
 
-      {/* Modal de réservation d’un circuit */}
+      {/* Modal de réservation d’un circuit rapide */}
       {selectedTrack && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50">
           <div className="bg-white p-8 rounded-lg w-96 shadow-2xl animate-fadeIn">
