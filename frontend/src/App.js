@@ -27,6 +27,7 @@ function App() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [totalPrice, setTotalPrice] = useState(0);
+  const [selectedCity, setSelectedCity] = useState('');
   const [showLogin, setShowLogin] = useState(false);
   const [showSignup, setShowSignup] = useState(false);
   const [showAdminPanel, setShowAdminPanel] = useState(false);
@@ -77,7 +78,6 @@ function App() {
     const data = await getUserReservations(username);
     setUserReservations(data);
   };
-
   const handleReserve = async () => {
     if (!selectedCar || !loggedInUser || !startDate || !endDate) {
       alert('Veuillez remplir tous les champs');
@@ -102,7 +102,8 @@ function App() {
       selectedCar.id,
       startDate,
       endDate,
-      price
+      price,
+      selectedCar.type === 'route' ? selectedCity : null
     );
 
     if (reservation?.error) {
@@ -112,6 +113,7 @@ function App() {
       setStartDate('');
       setEndDate('');
       setSelectedCar(null);
+      setSelectedCity('');
       setTotalPrice(0);
       fetchReservations();
       fetchUserReservations(loggedInUser.username);
@@ -226,7 +228,6 @@ function App() {
   const handleBrandFilterChange = (selectedBrand) => {
     setBrand(selectedBrand);
   };
-
   return (
     <div className="relative">
       <Header
@@ -264,6 +265,24 @@ function App() {
               onChange={(e) => setEndDate(e.target.value)}
               className="border p-2 mb-2 w-full"
             />
+            {selectedCar.type === 'route' && (
+              <div className="mb-4">
+                <label className="block text-gray-700 text-sm font-bold mb-2">
+                  Choisir la ville de réservation
+                </label>
+                <select
+                  value={selectedCity}
+                  onChange={(e) => setSelectedCity(e.target.value)}
+                  className="border p-2 mb-2 w-full"
+                  required
+                >
+                  <option value="">-- Sélectionner une ville --</option>
+                  <option value="Paris">Paris</option>
+                  <option value="Cannes">Cannes</option>
+                  <option value="Miami">Miami</option>
+                </select>
+              </div>
+            )}
             <button
               onClick={handleReserve}
               className="bg-green-500 text-white p-2 w-full mt-2 rounded"
@@ -280,64 +299,62 @@ function App() {
         </div>
       )}
 
-{selectedTrack && (
-  <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50">
-    <div className="bg-white p-6 rounded w-96 shadow-2xl">
-      <h2 className="text-xl font-bold mb-4 text-center">🏁 Réserver sur {selectedTrack.name}</h2>
+      {selectedTrack && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50">
+          <div className="bg-white p-6 rounded w-96 shadow-2xl">
+            <h2 className="text-xl font-bold mb-4 text-center">
+              🏁 Réserver sur {selectedTrack.name}
+            </h2>
 
-      {/* ✅ Image du circuit */}
-      <img
-        src={selectedTrack.imageUrl}
-        alt={selectedTrack.name}
-        className="w-full h-40 object-cover rounded mb-4"
-      />
+            <img
+              src={selectedTrack.imageUrl}
+              alt={selectedTrack.name}
+              className="w-full h-40 object-cover rounded mb-4"
+            />
 
-      {/* ✅ Liste déroulante des voitures de type circuit */}
-      <select
-        value={selectedCircuitCarId}
-        onChange={(e) => setSelectedCircuitCarId(e.target.value)}
-        className="border p-2 mb-2 w-full"
-      >
-        <option value="">Choisir une voiture de type circuit</option>
-        {cars
-          .filter((car) => car.type === 'circuit')
-          .map((car) => (
-            <option key={car.id} value={car.id}>
-              {car.name} - {car.price_per_day}€/jour
-            </option>
-          ))}
-      </select>
+            <select
+              value={selectedCircuitCarId}
+              onChange={(e) => setSelectedCircuitCarId(e.target.value)}
+              className="border p-2 mb-2 w-full"
+            >
+              <option value="">Choisir une voiture de type circuit</option>
+              {cars
+                .filter((car) => car.type === 'circuit')
+                .map((car) => (
+                  <option key={car.id} value={car.id}>
+                    {car.name} - {car.price_per_day}€/jour
+                  </option>
+                ))}
+            </select>
 
-      <input
-        type="date"
-        value={startDate}
-        onChange={(e) => setStartDate(e.target.value)}
-        className="border p-2 mb-2 w-full"
-      />
-      <input
-        type="date"
-        value={endDate}
-        onChange={(e) => setEndDate(e.target.value)}
-        className="border p-2 mb-2 w-full"
-      />
-
-      <button
-        onClick={handleCircuitReservation}
-        className="bg-green-500 text-white p-2 w-full mt-2 rounded"
-      >
-        Réserver circuit
-      </button>
-      <button
-        onClick={() => setSelectedTrack(null)}
-        className="bg-red-500 text-white p-2 w-full mt-2 rounded"
-      >
-        Annuler
-      </button>
-    </div>
-  </div>
-)}
-
-      {showSignup && (
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="border p-2 mb-2 w-full"
+            />
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="border p-2 mb-2 w-full"
+            />
+            <button
+              onClick={handleCircuitReservation}
+              className="bg-green-500 text-white p-2 w-full mt-2 rounded"
+            >
+              Réserver circuit
+            </button>
+            <button
+              onClick={() => setSelectedTrack(null)}
+              className="bg-red-500 text-white p-2 w-full mt-2 rounded"
+            >
+              Annuler
+            </button>
+          </div>
+        </div>
+      )}
+         {showSignup && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50">
           <div className="bg-white p-8 rounded-lg w-96 shadow-2xl">
             <h2 className="text-2xl font-bold mb-6 text-gray-800 border-b pb-2">Inscription</h2>
@@ -429,12 +446,16 @@ function App() {
                   <strong>Voiture :</strong> {res.Car.name}
                 </p>
                 <p>
-                  <strong>Du</strong> {res.start_date} <strong>au</strong>{' '}
-                  {res.end_date}
+                  <strong>Du</strong> {res.start_date} <strong>au</strong> {res.end_date}
                 </p>
                 <p>
                   <strong>Prix total :</strong> {res.total_price} €
                 </p>
+                {res.Car.type === 'route' && res.city && (
+                  <p>
+                    <strong>Ville :</strong> {res.city}
+                  </p>
+                )}
                 <p>
                   <strong>Statut :</strong> {res.status}
                 </p>
