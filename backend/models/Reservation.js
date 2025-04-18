@@ -33,11 +33,12 @@ const Reservation = sequelize.define('Reservation', {
     defaultValue: 'en cours'
   },
   city: {
-    type: DataTypes.STRING, // champ ajouté
+    type: DataTypes.STRING,
     allowNull: true
   }
 }, {
-  timestamps: true
+  timestamps: true,
+  tableName: 'Reservations' // 🔥 Très important pour correspondre exactement à ta table SQL
 });
 
 Reservation.belongsTo(Car, { foreignKey: 'car_id' });
