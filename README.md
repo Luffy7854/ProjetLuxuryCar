@@ -29,7 +29,7 @@
 
 ### 🔗 Prérequis
 - Node.js
-- MySQL (ou MariaDB)
+- Sequelize et Google Cloud
 - Un compte Stripe
 - Git
 
